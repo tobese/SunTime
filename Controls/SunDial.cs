@@ -8,6 +8,7 @@ namespace SunTime.Controls;
 
 public class SunDial : SKXamlCanvas
 {
+    private enum MarkerType { Rise, Set, Noon }
     private SolarCalculator.SunData? _sun;
     private SolarCalculator.SunData? _yesterdaySun;
     private DateTime _localNow;
@@ -215,33 +216,43 @@ public class SunDial : SKXamlCanvas
             setDelta = (_sun.Sunset.TimeOfDay - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
         }
 
-        // Yesterday diff radius lines (behind today's markers)
+        // Green/red diff sectors (behind today's markers)
         if (_yesterdaySun is not null)
         {
-            DrawDiffRadius(c, cx, cy, R, _yesterdaySun.Sunrise, new SKColor(0xFF, 0xA5, 0x00, 0x66));
-            DrawDiffRadius(c, cx, cy, R, _yesterdaySun.Sunset,  new SKColor(0xFF, 0x63, 0x47, 0x66));
+            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunrise, _sun.Sunrise, invertGain: true);
+            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset,  _sun.Sunset,  invertGain: false);
         }
 
-        DrawMarker(c, cx, cy, R, _sun.Sunrise, "Rise", new SKColor(0xFF, 0xA5, 0x00), riseDelta);
-        DrawMarker(c, cx, cy, R, _sun.Sunset,  "Set",  new SKColor(0xFF, 0x63, 0x47), setDelta);
-        DrawMarker(c, cx, cy, R, _sun.SolarNoon, "☀", new SKColor(0xFF, 0xD7, 0x00));
+        DrawMarker(c, cx, cy, R, _sun.Sunrise,   MarkerType.Rise, new SKColor(0xFF, 0xA5, 0x00), riseDelta, invertDelta: true);
+        DrawMarker(c, cx, cy, R, _sun.Sunset,    MarkerType.Set,  new SKColor(0xFF, 0x63, 0x47), setDelta,  invertDelta: false);
+        DrawMarker(c, cx, cy, R, _sun.SolarNoon, MarkerType.Noon, new SKColor(0xFF, 0xD7, 0x00));
     }
 
     private static void DrawMarker(SKCanvas c, float cx, float cy, float R,
-                                    DateTime time, string symbol, SKColor color,
-                                    double? deltaMinutes = null)
+                                    DateTime time, MarkerType type, SKColor color,
+                                    double? deltaMinutes = null, bool invertDelta = false)
     {
         double a = HourToAngle(time.Hour + time.Minute / 60.0);
         float cos = (float)Math.Cos(a), sin = (float)Math.Sin(a);
 
-        // Small mark on the arc
-        using var markPaint = new SKPaint
+        float arcX = cx + R * cos;
+        float arcY = cy - R * sin;
+
+        // Icon or dot on the arc
+        if (type is MarkerType.Rise or MarkerType.Set)
         {
-            IsAntialias = true,
-            Color = color,
-            Style = SKPaintStyle.Fill
-        };
-        c.DrawCircle(cx + R * cos, cy - R * sin, 5f, markPaint);
+            DrawSunIcon(c, arcX, arcY, R * 0.07f, color, isRise: type == MarkerType.Rise);
+        }
+        else
+        {
+            using var markPaint = new SKPaint
+            {
+                IsAntialias = true,
+                Color = color,
+                Style = SKPaintStyle.Fill
+            };
+            c.DrawCircle(arcX, arcY, 5f, markPaint);
+        }
 
         // Time label just outside
         using var labelFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.11f);
@@ -251,23 +262,26 @@ public class SunDial : SKXamlCanvas
             Color = color
         };
         float lr = R * 1.22f;
-        string label = $"{symbol} {time:HH:mm}";
+        string label = type == MarkerType.Noon
+            ? $"☀ {time:HH:mm}"
+            : $"{time:HH:mm}";
         float lx = cx + lr * cos;
         float ly = cy - lr * sin + labelFont.Size * 0.35f;
         c.DrawText(label, lx, ly, SKTextAlign.Center, labelFont, textPaint);
 
-        // Delta text below the label
+        // Weekly delta text below the label
         if (deltaMinutes.HasValue)
         {
-            int rounded = (int)Math.Round(deltaMinutes.Value);
-            if (rounded != 0)
+            double displayDelta = invertDelta ? -deltaMinutes.Value : deltaMinutes.Value;
+            int weeklyDelta = (int)Math.Round(displayDelta * 7);
+            if (weeklyDelta != 0)
             {
-                string deltaStr = rounded > 0 ? $"+{rounded}m" : $"{rounded}m";
-                var deltaColor = rounded > 0
+                string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}m/wk" : $"{weeklyDelta}m/wk";
+                var deltaColor = weeklyDelta > 0
                     ? new SKColor(0x66, 0xBB, 0x6A)  // green
                     : new SKColor(0xEF, 0x53, 0x50);  // red
 
-                using var deltaFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.08f);
+                using var deltaFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.10f);
                 using var deltaPaint = new SKPaint
                 {
                     IsAntialias = true,
@@ -276,6 +290,53 @@ public class SunDial : SKXamlCanvas
                 c.DrawText(deltaStr, lx, ly + labelFont.Size * 0.9f,
                            SKTextAlign.Center, deltaFont, deltaPaint);
             }
+        }
+    }
+
+    private static void DrawSunIcon(SKCanvas c, float x, float y, float size,
+                                     SKColor color, bool isRise)
+    {
+        float sunR = size * 0.4f;
+
+        using var fillPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Color = color,
+            Style = SKPaintStyle.Fill
+        };
+        using var strokePaint = new SKPaint
+        {
+            IsAntialias = true,
+            Color = color,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            StrokeCap = SKStrokeCap.Round
+        };
+
+        // Horizon line
+        c.DrawLine(x - size, y, x + size, y, strokePaint);
+
+        // Half-sun (semicircle)
+        using var sunPath = new SKPath();
+        var sunRect = new SKRect(x - sunR, y - sunR, x + sunR, y + sunR);
+        if (isRise)
+            sunPath.AddArc(sunRect, 180f, 180f);  // top half
+        else
+            sunPath.AddArc(sunRect, 0f, 180f);    // bottom half
+        c.DrawPath(sunPath, fillPaint);
+
+        // Rays
+        float rayInner = sunR * 1.5f;
+        float rayOuter = sunR * 2.2f;
+        for (int i = 0; i < 5; i++)
+        {
+            double angle = isRise
+                ? Math.PI * (0.9 - i * 0.2)   // above horizon
+                : Math.PI * (1.1 + i * 0.2);  // below horizon
+            float rc = (float)Math.Cos(angle);
+            float rs = (float)Math.Sin(angle);
+            c.DrawLine(x + rayInner * rc, y - rayInner * rs,
+                       x + rayOuter * rc, y - rayOuter * rs, strokePaint);
         }
     }
 
@@ -332,32 +393,39 @@ public class SunDial : SKXamlCanvas
                    SKTextAlign.Center, altFont, altPaint);
     }
 
-    // ── text helpers ─────────────────────────────────────────
-
-    private static string? FormatDelta(DateTime today, DateTime yesterday, out SKColor color)
+    private static void DrawDiffSector(SKCanvas c, float cx, float cy, float R,
+                                        DateTime yesterdayTime, DateTime todayTime,
+                                        bool invertGain)
     {
-        int delta = (int)Math.Round((today.TimeOfDay - yesterday.TimeOfDay).TotalMinutes);
-        if (delta == 0) { color = default; return null; }
-        color = delta > 0
-            ? new SKColor(0x66, 0xBB, 0x6A)  // green
-            : new SKColor(0xEF, 0x53, 0x50);  // red
-        return delta > 0 ? $"+{delta}m" : $"{delta}m";
-    }
+        float yesterdayDeg = HourToSkiaDeg(yesterdayTime);
+        float todayDeg = HourToSkiaDeg(todayTime);
 
-    private static void DrawDiffRadius(SKCanvas c, float cx, float cy, float R,
-                                        DateTime time, SKColor color)
-    {
-        double a = HourToAngle(time.Hour + time.Minute / 60.0);
-        float cos = (float)Math.Cos(a), sin = (float)Math.Sin(a);
+        float diff = todayDeg - yesterdayDeg;
+        if (diff > 180f) diff -= 360f;
+        if (diff < -180f) diff += 360f;
+
+        if (Math.Abs(diff) < 0.01f) return;
+
+        bool gaining = invertGain ? diff < 0 : diff > 0;
+        var color = gaining
+            ? new SKColor(0x66, 0xBB, 0x6A, 0x50)  // green translucent
+            : new SKColor(0xEF, 0x53, 0x50, 0x50);  // red translucent
+
+        float startAngle = diff > 0 ? yesterdayDeg : todayDeg;
+        float sweepAngle = Math.Abs(diff);
+
+        var rect = new SKRect(cx - R, cy - R, cx + R, cy + R);
         using var paint = new SKPaint
         {
             IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f,
-            Color = color,
-            PathEffect = SKPathEffect.CreateDash(new[] { 4f, 4f }, 0)
+            Style = SKPaintStyle.Fill,
+            Color = color
         };
-        c.DrawLine(cx, cy, cx + R * cos, cy - R * sin, paint);
+        using var path = new SKPath();
+        path.MoveTo(cx, cy);
+        path.ArcTo(rect, startAngle, sweepAngle, false);
+        path.Close();
+        c.DrawPath(path, paint);
     }
 
     // ── angle helpers ───────────────────────────────────────
