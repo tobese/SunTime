@@ -8,6 +8,8 @@ namespace SunTime.Controls;
 
 public class SunDial : SKXamlCanvas
 {
+    private const float SymbolClipExtent = 10000f;
+
     private SolarCalculator.SunData? _sun;
     private SolarCalculator.SunData? _yesterdaySun;
     private DateTime _localNow;
@@ -325,11 +327,11 @@ public class SunDial : SKXamlCanvas
         using var clip = new SKPath();
         if (isUp)
         {
-            clip.AddRect(new SKRect(cx - size, -10000f, cx + size, horizonY));
+            clip.AddRect(new SKRect(cx - size, -SymbolClipExtent, cx + size, horizonY));
         }
         else
         {
-            clip.AddRect(new SKRect(cx - size, horizonY, cx + size, 10000f));
+            clip.AddRect(new SKRect(cx - size, horizonY, cx + size, SymbolClipExtent));
         }
 
         c.Save();
