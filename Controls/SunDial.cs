@@ -290,7 +290,7 @@ public class SunDial : SKXamlCanvas
             int rounded = (int)Math.Round(deltaMinutes.Value);
             if (rounded != 0)
             {
-                string deltaStr = $"{(rounded > 0 ? "+" : string.Empty)}{rounded}m/wk";
+                string deltaStr = $"{(rounded > 0 ? "+" : "")}{rounded}m/wk";
                 var deltaColor = rounded > 0
                     ? new SKColor(0x66, 0xBB, 0x6A)  // green
                     : new SKColor(0xEF, 0x53, 0x50);  // red
@@ -333,11 +333,11 @@ public class SunDial : SKXamlCanvas
         using var clip = new SKPath();
         if (isSunrise)
         {
-            clip.AddRect(new SKRect(cx - size, -SymbolClipExtent, cx + size, horizonY));
+            clip.AddRect(new SKRect(cx - SymbolClipExtent, -SymbolClipExtent, cx + SymbolClipExtent, horizonY));
         }
         else
         {
-            clip.AddRect(new SKRect(cx - size, horizonY, cx + size, SymbolClipExtent));
+            clip.AddRect(new SKRect(cx - SymbolClipExtent, horizonY, cx + SymbolClipExtent, SymbolClipExtent));
         }
 
         c.Save();
