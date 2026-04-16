@@ -5,7 +5,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "**/*.cs"
+      - "**/*.xaml"
+      - "**/*.csproj"
+      - "Directory.Build.props"
+      - "global.json"
+      - ".github/workflows/android-build.yml"
   pull_request:
+    paths:
+      - "**/*.cs"
+      - "**/*.xaml"
+      - "**/*.csproj"
+      - "Directory.Build.props"
+      - "global.json"
+      - ".github/workflows/android-build.yml"
 
 jobs:
   build-android:
@@ -34,7 +48,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: suntime-android-apk
+          name: suntime-android-apk-${{ github.run_number }}
           path: |
             **/bin/Release/net10.0-android/publish/*.apk
           if-no-files-found: error
