@@ -27,10 +27,16 @@ jobs:
         run: dotnet workload install wasm-tools
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore SunTime.csproj -p:TargetFrameworks=net10.0-browserwasm
 
       - name: Publish
-        run: dotnet publish SunTime.csproj -c Release -f net10.0-browserwasm -p:ContinuousIntegrationBuild=true
+        run: >
+          dotnet publish SunTime.csproj
+          -c Release
+          -f net10.0-browserwasm
+          -p:TargetFrameworks=net10.0-browserwasm
+          -p:ContinuousIntegrationBuild=true
+          --no-restore
 
       - name: Upload WebAssembly artifact
         uses: actions/upload-artifact@v4
