@@ -19,13 +19,18 @@
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center" />
 
-      <ToggleSwitch x:Name="DstToggle"
-                    OnContent="DST"
-                    OffContent="DST"
-                    IsOn="True"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Margin="0,0,12,0" />
+      <Border HorizontalAlignment="Right"
+              VerticalAlignment="Center"
+              Margin="0,0,12,0"
+              Padding="10,4"
+              CornerRadius="12"
+              Background="#2A2A3A">
+        <ToggleSwitch x:Name="DstToggle"
+                      OnContent="DST"
+                      OffContent="DST"
+                      IsOn="True"
+                      Foreground="#F2F5FF" />
+      </Border>
     </Grid>
 
     <controls:SunDial x:Name="Dial"
