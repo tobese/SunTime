@@ -1,0 +1,38 @@
+<Page x:Class="SunTime.Pages.LoginPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      RequestedTheme="Dark"
+      Background="#121220">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Padding="40">
+        <StackPanel Spacing="24" MaxWidth="400">
+            <TextBlock Text="SunTime"
+                       FontSize="32" FontWeight="Bold"
+                       Foreground="#F0F0F0"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Sign in to continue"
+                       FontSize="16" Opacity="0.7"
+                       Foreground="#CCCCCC"
+                       HorizontalAlignment="Center" />
+
+            <Button x:Name="GoogleSignInButton"
+                    Content="Sign in with Google"
+                    Click="OnGoogleSignIn"
+                    HorizontalAlignment="Stretch"
+                    Padding="16,12" />
+
+            <Button x:Name="AppleSignInButton"
+                    Content="Sign in with Apple"
+                    Click="OnAppleSignIn"
+                    HorizontalAlignment="Stretch"
+                    Padding="16,12" />
+
+            <TextBlock x:Name="StatusText"
+                       Text=""
+                       Foreground="#FF6B6B"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</Page>

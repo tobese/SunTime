@@ -1,0 +1,57 @@
+<Page x:Class="SunTime.Pages.UserManagementPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      RequestedTheme="Dark"
+      Background="#121220">
+
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="User Management"
+                           FontSize="24" FontWeight="Bold"
+                           Foreground="#F0F0F0" />
+                <Button Grid.Column="1"
+                        Content="Back"
+                        Click="OnBack" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="All" Click="OnFilterAll" />
+                <Button Content="Pending" Click="OnFilterPending" />
+                <Button Content="Active" Click="OnFilterActive" />
+            </StackPanel>
+        </StackPanel>
+
+        <ListView x:Name="UserList" Grid.Row="1" Margin="0,16,0,0">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="8" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="#F0F0F0" />
+                            <TextBlock Text="{Binding Email}" Opacity="0.6" FontSize="12" Foreground="#CCCCCC" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding Role}" VerticalAlignment="Center" Foreground="#CCCCCC" />
+                        <TextBlock Grid.Column="2" Text="{Binding Status}" VerticalAlignment="Center" Foreground="#CCCCCC" />
+                        <Button Grid.Column="3" Content="Approve" Tag="{Binding Id}"
+                                Click="OnApproveUser" VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

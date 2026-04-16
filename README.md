@@ -21,21 +21,65 @@ A WebAssembly app that visualises the sun's current position relative to the hor
 ## Project Structure
 
 ```
-SunTime/
-├── Controls/
-│   └── SunDial.cs           # SkiaSharp custom control
-├── Services/
-│   ├── LocationService.cs   # Browser geolocation wrapper
-│   ├── SettingsService.cs   # User preferences
-│   └── SolarCalculator.cs   # NOAA sun position algorithm
-├── Platforms/
-│   └── WebAssembly/
-│       └── Program.cs       # WASM entry point
-├── MainPage.xaml/.cs        # Main UI + refresh timer
-├── SplashPage.xaml/.cs      # Splash / loading screen
-├── App.xaml/.cs             # App entry point
-└── SunTime.csproj
+.
+├── SunTime/                  # Uno WASM + Android frontend
+│   ├── Controls/
+│   │   └── SunDial.cs        # SkiaSharp custom control
+│   ├── Pages/
+│   │   ├── LoginPage              # Google/Apple sign-in
+│   │   ├── PendingApprovalPage    # Shown while awaiting admin approval
+│   │   └── UserManagementPage     # Admin / SuperAdmin only
+│   ├── Services/
+│   │   ├── ApiClient.cs      # HTTP client for SunTime.Server
+│   │   ├── LocationService.cs
+│   │   ├── SettingsService.cs
+│   │   └── SolarCalculator.cs
+│   ├── Platforms/WebAssembly/Program.cs
+│   ├── MainPage.xaml/.cs     # Dial + refresh timer (gated on sign-in)
+│   ├── SplashPage.xaml/.cs   # Splash → LoginPage
+│   └── App.xaml/.cs
+├── SunTime.Server/           # ASP.NET Core API
+│   ├── Controllers/
+│   │   ├── AuthController.cs    # /api/auth/login, /login/password, /me, /refresh
+│   │   └── UsersController.cs   # /api/users CRUD (Admin / SuperAdmin)
+│   ├── Data/
+│   │   ├── AppDbContext.cs
+│   │   └── Migrations/
+│   ├── Models/
+│   │   ├── AppUser.cs
+│   │   └── Dtos.cs
+│   └── Program.cs            # Identity + JWT + Google OIDC + PostgreSQL
+├── Dockerfile.wasm
+├── Dockerfile.api
+├── docker-compose.yml        # wasm + api + postgres
+└── nginx.conf                # serves WASM + reverse-proxies /api/*
 ```
+
+## User handling
+
+The frontend is gated behind a login flow modeled after the VirgoBoule project:
+
+1. `SplashPage` plays the sun-rise animation, then navigates to `LoginPage`.
+2. `LoginPage` triggers Google or Apple OIDC via `WebAuthenticationBroker` and
+   exchanges the returned `id_token` with `SunTime.Server` for a JWT.
+3. New users are created in `PendingApproval` status and sent to
+   `PendingApprovalPage` until an Admin/SuperAdmin approves them.
+4. `Active` users land on `MainPage` (the sun dial). Admin/SuperAdmin users also
+   see a "Manage Users" button that opens `UserManagementPage`.
+5. A seeded SuperAdmin (`admin@suntime.local` / `Admin123!`) is created in
+   development so the first approvals can happen without any external IdP setup.
+
+## Running the full stack locally
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- WASM frontend: http://localhost:8080
+- API backend:   http://localhost:8080/api/* (reverse-proxied by nginx)
+- PostgreSQL:    localhost:5432 (user `postgres`, db `suntime`)
 
 ## Getting Started
 

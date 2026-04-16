@@ -1,0 +1,27 @@
+<Page x:Class="SunTime.Pages.PendingApprovalPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      RequestedTheme="Dark"
+      Background="#121220">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Padding="40">
+        <StackPanel Spacing="16" MaxWidth="400">
+            <TextBlock Text="Account Pending Approval"
+                       FontSize="24" FontWeight="Bold"
+                       Foreground="#F0F0F0"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Your account has been created. An administrator will review and approve your access shortly."
+                       FontSize="14" Opacity="0.7"
+                       Foreground="#CCCCCC"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center" />
+
+            <Button Content="Sign Out"
+                    Click="OnSignOut"
+                    HorizontalAlignment="Center"
+                    Margin="0,20,0,0" />
+        </StackPanel>
+    </Grid>
+</Page>
