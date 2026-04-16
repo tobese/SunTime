@@ -63,3 +63,41 @@ Each CI run uploads a downloadable artifact named `suntime-browserwasm`.
 1. Open the **Actions** tab in GitHub.
 2. Select a **Build** workflow run.
 3. Download the `suntime-browserwasm` artifact from the **Artifacts** section.
+
+## Cloud environment (Oz)
+
+This repo is wired up to a Warp Oz cloud environment (team-scoped, ID `DMT1HA3vyEQmfeYplc8Xo0`) so cloud agents can build and run against both target frameworks declared in `SunTime.csproj` (`net10.0-browserwasm;net10.0-android`).
+
+### Base image
+
+`mcr.microsoft.com/dotnet/sdk:10.0`
+
+### Setup commands (order matters)
+
+1. `apt-get update && apt-get install -y python3`
+2. `dotnet workload install wasm-tools`
+3. `dotnet workload install android`
+4. `cd /workspace/SunTime && dotnet restore`
+
+The `android` workload install is required because `dotnet restore` with no `-f` flag resolves every TFM in the csproj, and the `net10.0-android` target fails without the workload. Symptom when it's missing:
+
+```
+Environment setup failed: Failed to run setup command: cd /workspace/SunTime && dotnet restore.
+```
+
+### Updating the environment
+
+Use the `oz` CLI (ordering is append-only, so you may need to remove and re-add the `dotnet restore` step to keep it last):
+
+```bash
+oz environment update DMT1HA3vyEQmfeYplc8Xo0 \
+  --remove-setup-command "cd /workspace/SunTime && dotnet restore" \
+  -c "dotnet workload install android" \
+  -c "cd /workspace/SunTime && dotnet restore"
+```
+
+Verify:
+
+```bash
+oz environment get DMT1HA3vyEQmfeYplc8Xo0 --output-format text
+```
