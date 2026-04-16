@@ -55,3 +55,11 @@ dotnet run
 ```
 
 The app will be served at `http://localhost:5001`.
+
+## Download build output from GitHub Actions
+
+Each CI run uploads a downloadable artifact named `suntime-browserwasm`.
+
+1. Open the **Actions** tab in GitHub.
+2. Select a **Build** workflow run.
+3. Download the `suntime-browserwasm` artifact from the **Artifacts** section.
