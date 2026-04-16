@@ -10,6 +10,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -34,5 +36,5 @@ jobs:
         with:
           name: suntime-android-apk
           path: |
-            bin/Release/net10.0-android/publish/*.apk
+            **/bin/Release/net10.0-android/publish/*.apk
           if-no-files-found: error
