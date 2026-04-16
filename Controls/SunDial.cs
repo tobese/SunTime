@@ -8,6 +8,7 @@ namespace SunTime.Controls;
 
 public class SunDial : SKXamlCanvas
 {
+    // Large clipping extent so the half-sun clip can extend well beyond the canvas bounds.
     private const float SymbolClipExtent = 10000f;
 
     private enum HorizonSymbolType
@@ -222,6 +223,7 @@ public class SunDial : SKXamlCanvas
         {
             var riseDelta = (_sun.Sunrise.TimeOfDay - _yesterdaySun.Sunrise.TimeOfDay).TotalMinutes;
             var setDelta = (_sun.Sunset.TimeOfDay - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
+            // Earlier sunrise is a daylight gain, so invert sunrise delta sign.
             riseGainPerWeek = -riseDelta * 7.0;
             setGainPerWeek = setDelta * 7.0;
         }
@@ -410,6 +412,7 @@ public class SunDial : SKXamlCanvas
 
         float yesterdaySkia = HourToSkiaDeg(yesterdayTime);
         float todaySkia = HourToSkiaDeg(todayTime);
+        // Normalize to [0, 360), then remap to shortest signed sweep so sectors cross 0° correctly.
         float normalizedSweep = (todaySkia - yesterdaySkia + 360f) % 360f;
         float sweep = normalizedSweep > 180f ? normalizedSweep - 360f : normalizedSweep;
         if (Math.Abs(sweep) < 0.01f) return;
