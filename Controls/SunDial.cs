@@ -10,6 +10,13 @@ public class SunDial : SKXamlCanvas
 {
     private const float SymbolClipExtent = 10000f;
 
+    private enum HorizonSymbolType
+    {
+        None,
+        Sunrise,
+        Sunset
+    }
+
     private SolarCalculator.SunData? _sun;
     private SolarCalculator.SunData? _yesterdaySun;
     private DateTime _localNow;
@@ -226,16 +233,15 @@ public class SunDial : SKXamlCanvas
             DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset, _sun.Sunset, setGainPerWeek);
         }
 
-        DrawMarker(c, cx, cy, R, _sun.Sunrise, $"{_sun.Sunrise:HH:mm}", new SKColor(0xFF, 0xA5, 0x00), riseGainPerWeek, drawSunriseSymbol: true);
-        DrawMarker(c, cx, cy, R, _sun.Sunset, $"{_sun.Sunset:HH:mm}", new SKColor(0xFF, 0x63, 0x47), setGainPerWeek, drawSunsetSymbol: true);
+        DrawMarker(c, cx, cy, R, _sun.Sunrise, $"{_sun.Sunrise:HH:mm}", new SKColor(0xFF, 0xA5, 0x00), riseGainPerWeek, horizonSymbol: HorizonSymbolType.Sunrise);
+        DrawMarker(c, cx, cy, R, _sun.Sunset, $"{_sun.Sunset:HH:mm}", new SKColor(0xFF, 0x63, 0x47), setGainPerWeek, horizonSymbol: HorizonSymbolType.Sunset);
         DrawMarker(c, cx, cy, R, _sun.SolarNoon, $"☀ {_sun.SolarNoon:HH:mm}", new SKColor(0xFF, 0xD7, 0x00));
     }
 
     private static void DrawMarker(SKCanvas c, float cx, float cy, float R,
                                     DateTime time, string labelText, SKColor color,
                                     double? deltaMinutes = null,
-                                    bool drawSunriseSymbol = false,
-                                    bool drawSunsetSymbol = false)
+                                    HorizonSymbolType horizonSymbol = HorizonSymbolType.None)
     {
         double a = HourToAngle(time.Hour + time.Minute / 60.0);
         float cos = (float)Math.Cos(a), sin = (float)Math.Sin(a);
@@ -260,7 +266,7 @@ public class SunDial : SKXamlCanvas
         float lx = cx + lr * cos;
         float ly = cy - lr * sin + labelFont.Size * 0.35f;
 
-        if (drawSunriseSymbol || drawSunsetSymbol)
+        if (horizonSymbol != HorizonSymbolType.None)
         {
             float symbolSize = labelFont.Size * 0.78f;
             float spacing = labelFont.Size * 0.28f;
@@ -270,7 +276,7 @@ public class SunDial : SKXamlCanvas
             float symbolCx = startX + symbolSize * 0.5f;
             float symbolCy = ly - labelFont.Size * 0.35f;
 
-            DrawSunHorizonSymbol(c, symbolCx, symbolCy, symbolSize, color, isUp: drawSunriseSymbol);
+            DrawSunHorizonSymbol(c, symbolCx, symbolCy, symbolSize, color, isSunrise: horizonSymbol == HorizonSymbolType.Sunrise);
             c.DrawText(labelText, startX + symbolSize + spacing, ly, SKTextAlign.Left, labelFont, textPaint);
         }
         else
@@ -284,7 +290,7 @@ public class SunDial : SKXamlCanvas
             int rounded = (int)Math.Round(deltaMinutes.Value);
             if (rounded != 0)
             {
-                string deltaStr = rounded > 0 ? $"+{rounded}m/wk" : $"{rounded}m/wk";
+                string deltaStr = $"{(rounded > 0 ? "+" : string.Empty)}{rounded}m/wk";
                 var deltaColor = rounded > 0
                     ? new SKColor(0x66, 0xBB, 0x6A)  // green
                     : new SKColor(0xEF, 0x53, 0x50);  // red
@@ -301,12 +307,12 @@ public class SunDial : SKXamlCanvas
         }
     }
 
-    private static void DrawSunHorizonSymbol(SKCanvas c, float cx, float cy, float size, SKColor color, bool isUp)
+    private static void DrawSunHorizonSymbol(SKCanvas c, float cx, float cy, float size, SKColor color, bool isSunrise)
     {
         float halfWidth = size * 0.5f;
         float horizonY = cy;
         float radius = size * 0.32f;
-        float sunCenterY = isUp ? horizonY - radius * 0.85f : horizonY + radius * 0.85f;
+        float sunCenterY = isSunrise ? horizonY - radius * 0.85f : horizonY + radius * 0.85f;
 
         using var linePaint = new SKPaint
         {
@@ -325,7 +331,7 @@ public class SunDial : SKXamlCanvas
             Color = color
         };
         using var clip = new SKPath();
-        if (isUp)
+        if (isSunrise)
         {
             clip.AddRect(new SKRect(cx - size, -SymbolClipExtent, cx + size, horizonY));
         }
@@ -404,8 +410,8 @@ public class SunDial : SKXamlCanvas
 
         float yesterdaySkia = HourToSkiaDeg(yesterdayTime);
         float todaySkia = HourToSkiaDeg(todayTime);
-        float sweepClockwise = (todaySkia - yesterdaySkia + 360f) % 360f;
-        float sweep = sweepClockwise > 180f ? sweepClockwise - 360f : sweepClockwise;
+        float normalizedSweep = (todaySkia - yesterdaySkia + 360f) % 360f;
+        float sweep = normalizedSweep > 180f ? normalizedSweep - 360f : normalizedSweep;
         if (Math.Abs(sweep) < 0.01f) return;
 
         var fillColor = roundedGain > 0
