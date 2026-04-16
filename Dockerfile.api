@@ -1,0 +1,22 @@
+# --- Build stage ---
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy solution-level files for restore
+COPY Directory.Build.props Directory.Build.targets Directory.Packages.props global.json ./
+COPY SunTime.Server/SunTime.Server.csproj SunTime.Server/
+RUN dotnet restore SunTime.Server/SunTime.Server.csproj
+
+# Copy everything and publish
+COPY SunTime.Server/ SunTime.Server/
+RUN dotnet publish SunTime.Server/SunTime.Server.csproj -c Release -o /app/publish
+
+# --- Runtime stage ---
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+RUN apk add --no-cache icu-libs
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "SunTime.Server.dll"]

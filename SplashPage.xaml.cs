@@ -158,7 +158,11 @@ public sealed partial class SplashPage : Page
             {
                 if (Frame != null)
                 {
-                    Frame.Navigate(typeof(MainPage));
+                    // Hand off to the login flow. LoginPage is responsible
+                    // for routing on to MainPage or PendingApprovalPage based
+                    // on the authenticated user's status.
+                    Frame.Navigate(typeof(Pages.LoginPage));
+                    Frame.BackStack.Clear();
                 }
             });
         }

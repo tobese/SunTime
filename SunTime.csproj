@@ -11,9 +11,26 @@
     <ApplicationPublisher>SunTime</ApplicationPublisher>
     <Description>Sun position visualizer with 24-hour analog clock.</Description>
 
+    <!--
+      Default SDK item globs recurse through the project directory, which would
+      otherwise drag the backend (SunTime.Server/) into the frontend build.
+      DefaultItemExcludes adds to the SDK's default exclude list.
+    -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);SunTime.Server\**</DefaultItemExcludes>
+
     <UnoFeatures>
       SkiaRenderer;
+      AuthenticationOidc;
     </UnoFeatures>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Belt-and-braces exclusions in case any SDK-specific globs bypass DefaultItemExcludes. -->
+    <Compile Remove="SunTime.Server\**\*.cs" />
+    <None Remove="SunTime.Server\**\*" />
+    <Content Remove="SunTime.Server\**\*" />
+    <EmbeddedResource Remove="SunTime.Server\**\*" />
+    <Page Remove="SunTime.Server\**\*" />
+  </ItemGroup>
 
 </Project>

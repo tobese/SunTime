@@ -12,22 +12,54 @@
     </Grid.RowDefinitions>
 
     <Grid Grid.Row="0" Margin="0,12,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+
+      <TextBlock x:Name="UserText"
+                 Grid.Column="0"
+                 Text=""
+                 Foreground="#888888"
+                 FontSize="12"
+                 VerticalAlignment="Center"
+                 Margin="12,0,0,0" />
+
       <TextBlock x:Name="StatusText"
+                 Grid.Column="1"
                  Text="Locating…"
                  Foreground="#AAAAAA"
                  FontSize="14"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center" />
 
-      <Border Background="#22FFFFFF" CornerRadius="4" Padding="8,4"
-              HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0">
-        <ToggleSwitch x:Name="DstToggle"
-                      OnContent="DST"
-                      OffContent="DST"
-                      IsOn="True"
-                      Foreground="#CCCCCC"
-                      Margin="0" />
-      </Border>
+      <StackPanel Grid.Column="2"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  VerticalAlignment="Center"
+                  Margin="0,0,12,0">
+        <Button x:Name="ManageUsersButton"
+                Content="Manage Users"
+                Click="OnManageUsers"
+                Visibility="Collapsed"
+                Padding="8,4" />
+
+        <Button x:Name="SignOutButton"
+                Content="Sign Out"
+                Click="OnSignOut"
+                Visibility="Collapsed"
+                Padding="8,4" />
+
+        <Border Background="#22FFFFFF" CornerRadius="4" Padding="8,4">
+          <ToggleSwitch x:Name="DstToggle"
+                        OnContent="DST"
+                        OffContent="DST"
+                        IsOn="True"
+                        Foreground="#CCCCCC"
+                        Margin="0" />
+        </Border>
+      </StackPanel>
     </Grid>
 
     <controls:SunDial x:Name="Dial"

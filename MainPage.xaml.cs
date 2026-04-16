@@ -9,6 +9,7 @@ namespace SunTime;
 
 public sealed partial class MainPage : Page
 {
+    private readonly ApiClient _api = ApiClient.Instance;
     private double _latitude;
     private double _longitude;
     private DispatcherTimer? _timer;
@@ -21,6 +22,22 @@ public sealed partial class MainPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        // Gate the dial on an authenticated, active user.
+        var user = _api.CurrentUser;
+        if (user == null)
+        {
+            Frame.Navigate(typeof(Pages.LoginPage));
+            Frame.BackStack.Clear();
+            return;
+        }
+
+        UserText.Text = $"Signed in as {user.DisplayName ?? user.Email} · {user.Role}";
+        SignOutButton.Visibility = Visibility.Visible;
+        if (user.Role is "Admin" or "SuperAdmin")
+        {
+            ManageUsersButton.Visibility = Visibility.Visible;
+        }
+
         DstToggle.IsOn = SettingsService.AdjustApexForDst;
         DstToggle.Toggled += DstToggle_Toggled;
 
@@ -43,6 +60,19 @@ public sealed partial class MainPage : Page
     {
         SettingsService.AdjustApexForDst = DstToggle.IsOn;
         Refresh();
+    }
+
+    private void OnManageUsers(object sender, RoutedEventArgs e)
+    {
+        Frame.Navigate(typeof(Pages.UserManagementPage));
+    }
+
+    private void OnSignOut(object sender, RoutedEventArgs e)
+    {
+        _timer?.Stop();
+        _api.Logout();
+        Frame.Navigate(typeof(Pages.LoginPage));
+        Frame.BackStack.Clear();
     }
 
     private void Refresh()
