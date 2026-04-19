@@ -6,34 +6,52 @@
       Background="#121220">
 
   <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
 
-    <Grid Grid.Row="0" Margin="0,12,0,0">
-      <TextBlock x:Name="StatusText"
-                 Text="Locating…"
-                 Foreground="#AAAAAA"
-                 FontSize="14"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center" />
-
-      <Border Background="#22FFFFFF" CornerRadius="4" Padding="8,4"
-              HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0">
-        <ToggleSwitch x:Name="DstToggle"
-                      OnContent="DST"
-                      OffContent="DST"
-                      IsOn="True"
-                      Foreground="#CCCCCC"
-                      Margin="0" />
-      </Border>
-    </Grid>
-
+    <!-- Full-screen dial -->
     <controls:SunDial x:Name="Dial"
-                      Grid.Row="1"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch" />
+
+    <!-- Settings button — top-right overlay -->
+    <Button x:Name="SettingsButton"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Margin="0,14,14,0"
+            Background="#33FFFFFF"
+            BorderThickness="0"
+            CornerRadius="20"
+            Padding="10,6"
+            Click="SettingsButton_Click">
+      <TextBlock Text="⚙"
+                 FontSize="17"
+                 Foreground="#DDDDDD" />
+    </Button>
+
+    <!-- Debug bar — top overlay (DEBUG builds only, collapsed by default) -->
+    <StackPanel x:Name="DebugBar"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Visibility="Collapsed"
+                Orientation="Horizontal"
+                Spacing="8"
+                Margin="12,14,0,0"
+                Background="#99121220">
+      <Slider x:Name="TimeSlider"
+              Minimum="0" Maximum="1439" StepFrequency="1"
+              VerticalAlignment="Center"
+              MinWidth="160" />
+      <TextBlock x:Name="DebugTimeText"
+                 Width="48"
+                 Foreground="#FFCC00"
+                 FontSize="13"
+                 VerticalAlignment="Center"
+                 TextAlignment="Center" />
+      <Button x:Name="DebugResetBtn"
+              Content="✕"
+              Padding="6,2"
+              FontSize="13" />
+    </StackPanel>
+
   </Grid>
 
 </Page>
