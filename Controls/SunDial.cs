@@ -67,6 +67,9 @@ public class SunDial : SKXamlCanvas
         // Straps are drawn first (unrotated, behind everything).
         DrawStraps(canvas, cx, cy, R, info.Height);
 
+        // Steel bezel ring — unrotated, sits on top of straps, behind the dial fill.
+        DrawBezel(canvas, cx, cy, R);
+
         // When NoonAtTop is on, rotate the canvas so solar noon sits at 12 o'clock.
         // HourToAngle(noon) gives the math-convention angle; the top of the clock is π/2.
         // The canvas rotation (clockwise degrees) is the negated difference.
@@ -84,12 +87,15 @@ public class SunDial : SKXamlCanvas
         DrawClockFace(canvas, cx, cy, R * 0.58f);
         if (SettingsService.ShowDurations)
             DrawDurationLabels(canvas, cx, cy, R, _sun);
-        DrawEventMarkers(canvas, cx, cy, R);
+        DrawEventArcDots(canvas, cx, cy, R);   // only dots/sectors — rotate with dial
         DrawSun(canvas, cx, cy, R);
 
         canvas.Restore();
 
-        // Location label on top of everything, unrotated.
+        // Fixed overlays — never rotate, always aligned with the rim.
+        DrawRiseSetBoxes(canvas, cx, cy, R);
+        DrawNoonLabel(canvas, cx, cy, R);
+        DrawDateField(canvas, cx, cy, R);
         DrawLocationLabel(canvas, cx, cy, R);
     }
 
@@ -273,6 +279,144 @@ public class SunDial : SKXamlCanvas
         c.DrawLine(bkL - R * 0.015f, pinY, cx, pinY, pinStroke);
     }
 
+    // ── pilot-watch bezel ────────────────────────────────────────
+
+    private static void DrawBezel(SKCanvas c, float cx, float cy, float R)
+    {
+        float innerR = R;
+        float outerR = R * 1.20f;
+        float bezelW = outerR - innerR;   // = R * 0.20
+
+        // ── Steel annular fill: L→R gradient simulates circular brushing ──
+        using var steelShader = SKShader.CreateLinearGradient(
+            new SKPoint(cx - outerR, cy),
+            new SKPoint(cx + outerR, cy),
+            new SKColor[]
+            {
+                new(0x50, 0x50, 0x5C),
+                new(0x80, 0x80, 0x90),
+                new(0xB8, 0xB8, 0xC8),
+                new(0xD0, 0xD0, 0xDC),
+                new(0xA8, 0xA8, 0xB8),
+                new(0x78, 0x78, 0x88),
+                new(0x98, 0x98, 0xA8),
+                new(0x50, 0x50, 0x5C),
+            },
+            new float[] { 0f, 0.12f, 0.30f, 0.50f, 0.65f, 0.76f, 0.88f, 1f },
+            SKShaderTileMode.Clamp);
+
+        using var steelPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Shader = steelShader
+        };
+        using var annPath = new SKPath();
+        annPath.AddCircle(cx, cy, outerR);
+        annPath.AddCircle(cx, cy, innerR);
+        annPath.FillType = SKPathFillType.EvenOdd;
+        c.DrawPath(annPath, steelPaint);
+
+        // ── Bevel: highlight top-left, shadow bottom-right ───
+        var outerRect = new SKRect(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+        using var hiPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x55)
+        };
+        using var shPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f, Color = new SKColor(0x00, 0x00, 0x00, 0x55)
+        };
+        c.DrawArc(outerRect, 195f, 165f, false, hiPaint);   // top-left arc
+        c.DrawArc(outerRect, 15f,  165f, false, shPaint);   // bottom-right arc
+
+        // Inner shadow edge flush with dial
+        using var innerEdgePaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f, Color = new SKColor(0x18, 0x18, 0x24, 0xD0)
+        };
+        c.DrawCircle(cx, cy, innerR, innerEdgePaint);
+
+        // ── Tick marks: 60 positions, major every 5 ──────────
+        using var majTickPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f, Color = new SKColor(0xE4, 0xE4, 0xF0)
+        };
+        using var minTickPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.8f, Color = new SKColor(0xA8, 0xA8, 0xB8, 0xCC)
+        };
+
+        for (int i = 0; i < 60; i++)
+        {
+            // 0 at top, clockwise — standard watch convention
+            double angle = Math.PI / 2.0 - i * (2.0 * Math.PI / 60.0);
+            float cos = (float)Math.Cos(angle);
+            float sin = (float)Math.Sin(angle);
+
+            bool major = i % 5 == 0;
+            float tickLen   = major ? bezelW * 0.48f : bezelW * 0.26f;
+            float tickInner = outerR - tickLen;
+
+            c.DrawLine(
+                cx + tickInner * cos, cy - tickInner * sin,
+                cx + (outerR - 1f) * cos, cy - (outerR - 1f) * sin,
+                major ? majTickPaint : minTickPaint);
+        }
+
+        // ── Rectangular index batons at 3, 6, 9 o'clock ─────
+        float batonW = bezelW * 0.28f;   // width of baton (tangential)
+        float batonH = bezelW * 0.44f;   // depth of baton (radial)
+        float batonOuter = outerR - bezelW * 0.10f;
+        float batonInner = batonOuter - batonH;
+        using var batonPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Color = new SKColor(0xF0, 0xF0, 0xF8)
+        };
+
+        // Cardinal positions: 15 min = right (3 o'clock), 30 = bottom (6), 45 = left (9)
+        foreach (int min in new[] { 15, 30, 45 })
+        {
+            double angle = Math.PI / 2.0 - min * (2.0 * Math.PI / 60.0);
+            float cos = (float)Math.Cos(angle);
+            float sin = (float)Math.Sin(angle);
+
+            // Centre of the baton
+            float bCx = cx + ((batonOuter + batonInner) / 2f) * cos;
+            float bCy = cy - ((batonOuter + batonInner) / 2f) * sin;
+
+            c.Save();
+            c.Translate(bCx, bCy);
+            c.RotateDegrees(-(float)(angle * 180.0 / Math.PI));  // align radially
+            c.DrawRect(-batonW / 2f, -batonH / 2f, batonW, batonH, batonPaint);
+            c.Restore();
+        }
+
+        // ── Triangle pointer at 12 o'clock ────────────────────
+        float triTip    = outerR - bezelW * 0.07f;
+        float triBase   = outerR - bezelW * 0.52f;
+        float triHalfW  = bezelW * 0.20f;
+        using var triPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Color = new SKColor(0xF0, 0xF0, 0xF8)
+        };
+        using var triPath = new SKPath();
+        triPath.MoveTo(cx, cy - triTip);
+        triPath.LineTo(cx - triHalfW, cy - triBase);
+        triPath.LineTo(cx + triHalfW, cy - triBase);
+        triPath.Close();
+        c.DrawPath(triPath, triPaint);
+    }
+
     // ── location label (inside the clock, upper sky area) ───────
 
     private void DrawLocationLabel(SKCanvas c, float cx, float cy, float R)
@@ -423,7 +567,38 @@ public class SunDial : SKXamlCanvas
 
     // ── sunrise / sunset / noon markers ─────────────────────
 
-    private void DrawEventMarkers(SKCanvas c, float cx, float cy, float R)
+    /// <summary>Draws diff sectors and arc dots only — rotates with the dial.</summary>
+    private void DrawEventArcDots(SKCanvas c, float cx, float cy, float R)
+    {
+        if (_sun is null) return;
+
+        if (_yesterdaySun is not null && SettingsService.ShowWeekDiffs)
+        {
+            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunrise, _sun.Sunrise, invertGain: true);
+            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset,  _sun.Sunset,  invertGain: false);
+        }
+
+        // Rise dot
+        DrawArcDot(c, cx, cy, R, _sun.Sunrise, new SKColor(0xFF, 0xA5, 0x00));
+        // Set dot
+        DrawArcDot(c, cx, cy, R, _sun.Sunset,  new SKColor(0xFF, 0x63, 0x47));
+        // Noon dot (always shown; suppressed only when NoonAtTop)
+        if (!SettingsService.NoonAtTop)
+            DrawArcDot(c, cx, cy, R, _sun.SolarNoon, new SKColor(0xFF, 0xD7, 0x00));
+    }
+
+    private static void DrawArcDot(SKCanvas c, float cx, float cy, float R,
+                                    DateTime time, SKColor color)
+    {
+        double a = HourToAngle(time.Hour + time.Minute / 60.0);
+        float x = cx + R * (float)Math.Cos(a);
+        float y = cy - R * (float)Math.Sin(a);
+        using var p = new SKPaint { IsAntialias = true, Color = color, Style = SKPaintStyle.Fill };
+        c.DrawCircle(x, y, 5f, p);
+    }
+
+    /// <summary>Fixed rise + set label boxes — drawn outside rotation, always upright.</summary>
+    private void DrawRiseSetBoxes(SKCanvas c, float cx, float cy, float R)
     {
         if (_sun is null) return;
 
@@ -431,101 +606,168 @@ public class SunDial : SKXamlCanvas
         if (_yesterdaySun is not null)
         {
             riseDelta = (_sun.Sunrise.TimeOfDay - _yesterdaySun.Sunrise.TimeOfDay).TotalMinutes;
-            setDelta = (_sun.Sunset.TimeOfDay - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
+            setDelta  = (_sun.Sunset.TimeOfDay  - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
         }
-
-        // Green/red diff sectors (behind today's markers)
-        if (_yesterdaySun is not null && SettingsService.ShowWeekDiffs)
-        {
-            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunrise, _sun.Sunrise, invertGain: true);
-            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset, _sun.Sunset, invertGain: false);
-        }
-
-        // Pass deltas only when week diffs are enabled so the ±m/wk text is also hidden.
         double? visibleRiseDelta = SettingsService.ShowWeekDiffs ? riseDelta : null;
         double? visibleSetDelta  = SettingsService.ShowWeekDiffs ? setDelta  : null;
 
-        DrawMarker(c, cx, cy, R, _sun.Sunrise, MarkerType.Rise, new SKColor(0xFF, 0xA5, 0x00), visibleRiseDelta, invertDelta: true);
-        DrawMarker(c, cx, cy, R, _sun.Sunset, MarkerType.Set, new SKColor(0xFF, 0x63, 0x47), visibleSetDelta, invertDelta: false);
-        // When NoonAtTop is on the top of the dial IS solar noon — marker is redundant.
-        if (!SettingsService.NoonAtTop)
-            DrawMarker(c, cx, cy, R, _sun.SolarNoon, MarkerType.Noon, new SKColor(0xFF, 0xD7, 0x00),
-                       showLabel: SettingsService.ShowApexTime);
+        DrawRiseSetField(c, cx, cy, R, _sun.Sunrise, MarkerType.Rise,
+                         new SKColor(0xFF, 0xA5, 0x00), visibleRiseDelta, invertDelta: true);
+        DrawRiseSetField(c, cx, cy, R, _sun.Sunset,  MarkerType.Set,
+                         new SKColor(0xFF, 0x63, 0x47), visibleSetDelta,  invertDelta: false);
     }
 
-    private static void DrawMarker(SKCanvas c, float cx, float cy, float R,
-                                    DateTime time, MarkerType type, SKColor color,
-                                    double? deltaMinutes = null, bool invertDelta = false,
-                                    bool showLabel = true)
+    /// <summary>Fixed noon time label — drawn outside rotation, always upright.</summary>
+    private void DrawNoonLabel(SKCanvas c, float cx, float cy, float R)
     {
-        double a = HourToAngle(time.Hour + time.Minute / 60.0);
-        float cos = (float)Math.Cos(a), sin = (float)Math.Sin(a);
+        if (_sun is null || SettingsService.NoonAtTop || !SettingsService.ShowApexTime) return;
 
-        float arcX = cx + R * cos;
-        float arcY = cy - R * sin;
+        var color = new SKColor(0xFF, 0xD7, 0x00);
+        float fontSize = R * 0.085f;
+        float rowY = cy - R * 0.65f;
+        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var paint = new SKPaint { IsAntialias = true, Color = color };
+        c.DrawText($"{_sun.SolarNoon:HH:mm}", cx, rowY + fontSize * 0.35f,
+                   SKTextAlign.Center, font, paint);
+    }
 
-        // Icon or dot on the arc
-        if (type is MarkerType.Rise or MarkerType.Set)
+    /// <summary>
+    /// Tight instrument field at a fixed row aligned with the "12" label.
+    /// Rise sits left, Set sits right. Always upright — call outside rotation.
+    /// </summary>
+    private static void DrawRiseSetField(SKCanvas c, float cx, float cy, float R,
+                                          DateTime time, MarkerType type, SKColor color,
+                                          double? deltaMinutes, bool invertDelta)
+    {
+        bool hasDelta = deltaMinutes.HasValue &&
+                        (int)Math.Round(Math.Abs(deltaMinutes.Value) * 7) != 0;
+
+        float fontSize      = R * 0.078f;
+        float deltaFontSize = R * 0.065f;
+        float padY          = R * 0.030f;
+        float lineGap       = R * 0.018f;
+        float corner        = R * 0.028f;
+
+        float boxH = padY * 2 + fontSize + (hasDelta ? lineGap + deltaFontSize : 0f);
+        float boxW = R * 0.26f;
+
+        // Fixed row at the "12" label height (nr = R*0.58*1.12 = R*0.65 above centre)
+        float rowY    = cy - R * 0.65f;
+        float fieldCx = type == MarkerType.Rise ? cx - R * 0.44f : cx + R * 0.44f;
+
+        float boxLeft = fieldCx - boxW / 2f;
+        float boxTop  = rowY - boxH / 2f;
+        var rect = new SKRect(boxLeft, boxTop, boxLeft + boxW, boxTop + boxH);
+
+        // ── Background ───────────────────────────────────────
+        using var bgPaint = new SKPaint
         {
-            // Half-sun icons temporarily disabled while iterating on styling.
-        }
-        else
-        {
-            using var markPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Color = color,
-                Style = SKPaintStyle.Fill
-            };
-            c.DrawCircle(arcX, arcY, 5f, markPaint);
-        }
-
-        if (!showLabel) return;
-
-        // Time label: Rise / Noon / Set are pinned to fixed upper-quadrant angles so
-        // they always sit in the sky half, inside the outer ring.
-        using var labelFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.10f);
-        using var textPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Color = color
+            IsAntialias = true, Style = SKPaintStyle.Fill,
+            Color = new SKColor(0x18, 0x18, 0x28, 0xCC)
         };
-        double labelAngleRad = type switch
-        {
-            MarkerType.Rise => Math.PI * 2.0 / 3.0,  // 120° (upper-left)
-            MarkerType.Set  => Math.PI / 3.0,        //  60° (upper-right)
-            _               => Math.PI / 2.0,       //  90° (straight up)
-        };
-        float labelLr = R * 0.80f;  // inward so the sun can pass between labels and ring
-        float lcos = (float)Math.Cos(labelAngleRad);
-        float lsin = (float)Math.Sin(labelAngleRad);
-        float lx = cx + labelLr * lcos;
-        float ly = cy - labelLr * lsin + labelFont.Size * 0.35f;
-        string label = $"{time:HH:mm}";
-        c.DrawText(label, lx, ly, SKTextAlign.Center, labelFont, textPaint);
+        c.DrawRoundRect(rect, corner, corner, bgPaint);
 
-        // Weekly delta text below the label
-        if (deltaMinutes.HasValue)
+        // ── Border: steel-style with highlight/shadow bevel ──
+        using var borderPaint = new SKPaint
         {
-            double displayDelta = invertDelta ? -deltaMinutes.Value : deltaMinutes.Value;
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.1f,
+            Color = new SKColor(0xB0, 0xB0, 0xC4, 0xCC)
+        };
+        c.DrawRoundRect(rect, corner, corner, borderPaint);
+
+        // Highlight top-left edge, shadow bottom-right
+        using var hiPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
+        };
+        using var shPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f, Color = new SKColor(0x00, 0x00, 0x00, 0x50)
+        };
+        // Top + left highlight
+        c.DrawLine(rect.Left + corner, rect.Top, rect.Right - corner, rect.Top, hiPaint);
+        c.DrawLine(rect.Left, rect.Top + corner, rect.Left, rect.Bottom - corner, hiPaint);
+        // Bottom + right shadow
+        c.DrawLine(rect.Left + corner, rect.Bottom, rect.Right - corner, rect.Bottom, shPaint);
+        c.DrawLine(rect.Right, rect.Top + corner, rect.Right, rect.Bottom - corner, shPaint);
+
+        // ── Time text — vertically centred in box ────────────
+        float boxCy  = rowY;
+        float timeY  = hasDelta
+            ? boxTop + padY + fontSize * 0.78f          // nudge up when delta row below
+            : boxCy + fontSize * 0.35f;                 // true vertical centre
+        using var timeFont  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var timePaint = new SKPaint { IsAntialias = true, Color = color };
+        c.DrawText($"{time:HH:mm}", fieldCx, timeY, SKTextAlign.Center, timeFont, timePaint);
+
+        // ── Delta row ────────────────────────────────────────
+        if (hasDelta)
+        {
+            double displayDelta = invertDelta ? -deltaMinutes!.Value : deltaMinutes!.Value;
             int weeklyDelta = (int)Math.Round(displayDelta * 7);
-            if (weeklyDelta != 0)
-            {
-                string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}m/wk" : $"{weeklyDelta}m/wk";
-                var deltaColor = weeklyDelta > 0
-                    ? new SKColor(0x66, 0xBB, 0x6A)  // green
-                    : new SKColor(0xEF, 0x53, 0x50);  // red
-
-                using var deltaFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.09f);
-                using var deltaPaint = new SKPaint
-                {
-                    IsAntialias = true,
-                    Color = deltaColor
-                };
-                c.DrawText(deltaStr, lx, ly + labelFont.Size * 0.9f,
-                           SKTextAlign.Center, deltaFont, deltaPaint);
-            }
+            string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}m/wk" : $"{weeklyDelta}m/wk";
+            var deltaColor = weeklyDelta > 0
+                ? new SKColor(0x66, 0xBB, 0x6A)
+                : new SKColor(0xEF, 0x53, 0x50);
+            using var deltaFont  = new SKFont(SKTypeface.FromFamilyName("Arial"), deltaFontSize);
+            using var deltaPaint = new SKPaint { IsAntialias = true, Color = deltaColor };
+            c.DrawText(deltaStr, fieldCx, timeY + lineGap + deltaFontSize * 0.78f,
+                       SKTextAlign.Center, deltaFont, deltaPaint);
         }
+    }
+
+    /// <summary>Instrument field showing the current date, centred in the upper sky area.</summary>
+    private void DrawDateField(SKCanvas c, float cx, float cy, float R)
+    {
+        string dateStr = _localNow.ToString("yyyy-MM-dd");
+
+        float fontSize = R * 0.078f;
+        float padY     = R * 0.030f;
+        float corner   = R * 0.028f;
+        float boxW     = R * 0.52f;
+        float boxH     = padY * 2 + fontSize;
+
+        // Between the "0" label (cy + R*0.65) and the inner rim (cy + R) → midpoint ~cy + R*0.82
+        float boxCx = cx;
+        float boxCy = cy + R * 0.82f;
+        var rect = new SKRect(boxCx - boxW / 2f, boxCy - boxH / 2f,
+                              boxCx + boxW / 2f, boxCy + boxH / 2f);
+
+        using var bgPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Fill,
+            Color = new SKColor(0x18, 0x18, 0x28, 0xCC)
+        };
+        c.DrawRoundRect(rect, corner, corner, bgPaint);
+
+        using var borderPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.1f, Color = new SKColor(0xB0, 0xB0, 0xC4, 0xCC)
+        };
+        c.DrawRoundRect(rect, corner, corner, borderPaint);
+
+        using var hiPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
+        };
+        using var shPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f, Color = new SKColor(0x00, 0x00, 0x00, 0x50)
+        };
+        c.DrawLine(rect.Left + corner, rect.Top, rect.Right - corner, rect.Top, hiPaint);
+        c.DrawLine(rect.Left, rect.Top + corner, rect.Left, rect.Bottom - corner, hiPaint);
+        c.DrawLine(rect.Left + corner, rect.Bottom, rect.Right - corner, rect.Bottom, shPaint);
+        c.DrawLine(rect.Right, rect.Top + corner, rect.Right, rect.Bottom - corner, shPaint);
+
+        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(0xEC, 0xEC, 0xF4) };
+        c.DrawText(dateStr, boxCx, boxCy + fontSize * 0.35f, SKTextAlign.Center, font, paint);
     }
 
     private static void DrawSunIcon(SKCanvas c, float x, float y, float size,
