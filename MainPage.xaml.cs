@@ -36,8 +36,8 @@ public sealed partial class MainPage : Page
         _longitude = lon;
 
         Dial.LocationLabel = isFallback
-            ? $"Stockholm (fallback)  {lat:F2}°N  {lon:F2}°E"
-            : $"{lat:F2}°N  {lon:F2}°E";
+            ? $"Stockholm (fallback)  {lat:F2}°N · {lon:F2}°E"
+            : $"{lat:F2}°N · {lon:F2}°E";
 
         Refresh();
 

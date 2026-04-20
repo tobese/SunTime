@@ -423,10 +423,9 @@ public class SunDial : SKXamlCanvas
     {
         if (string.IsNullOrEmpty(LocationLabel)) return;
 
-        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.082f);
+        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.065f);
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x60) };
-        // Inside the circle, just below the 12-o'clock rim — right under noon.
-        float y = cy - R * 0.78f + font.Size * 0.35f;
+        float y = cy - R * 0.808f + font.Size * 0.35f;
         c.DrawText(LocationLabel, cx, y, SKTextAlign.Center, font, paint);
     }
 
