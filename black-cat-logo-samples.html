@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Black Cat — Logo Samples</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; color: #eee; font-family: Arial, sans-serif; padding: 40px; }
+  h1 { text-align: center; font-size: 12px; letter-spacing: 5px;
+       text-transform: uppercase; color: #555; margin-bottom: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 28px; max-width: 960px; margin: 0 auto; }
+  .grid > .hero { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; }
+  .sample { background: #0e0e1c; border: 1px solid #222238; border-radius: 10px;
+            padding: 28px 20px 16px; display: flex; flex-direction: column;
+            align-items: center; gap: 14px; }
+  .label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #444; }
+</style>
+</head>
+<body>
+<h1>Black Cat · Pilot Watch · Logo Samples</h1>
+<div class="grid">
+
+<!-- Shared cat path: traced from silhouette, viewBox 0 0 200 200 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="cat" viewBox="0 0 200 200">
+      <path d="M 22.7,25.9 L 24.6,36.8 L 14.1,43.5 L 11.9,49.7 L 8.1,55.7 L 10.3,61.9 L 12.7,63.5 L 21.9,64.1 L 24.9,66.8 L 24.9,72.7 L 23.0,83.2 L 23.2,90.0 L 28.4,102.4 L 35.9,113.0 L 37.6,117.6 L 39.7,134.9 L 39.7,150.3 L 38.1,158.1 L 31.9,162.4 L 31.4,165.7 L 33.0,168.4 L 40.0,169.7 L 45.4,167.0 L 55.4,132.7 L 57.6,136.2 L 60.0,145.9 L 67.3,157.6 L 67.3,158.6 L 63.5,160.8 L 60.0,161.1 L 57.3,163.2 L 56.5,167.3 L 58.9,169.5 L 103.8,170.3 L 107.6,169.5 L 111.9,166.5 L 124.1,169.5 L 160.0,169.7 L 170.8,170.8 L 185.9,174.1 L 191.4,174.1 L 191.1,171.6 L 188.1,169.5 L 174.9,164.9 L 154.6,162.2 L 127.6,160.8 L 119.2,157.8 L 116.2,154.3 L 115.4,151.1 L 117.0,141.1 L 117.0,130.8 L 115.7,123.0 L 110.5,106.5 L 103.2,93.0 L 95.1,84.1 L 88.9,79.7 L 65.7,71.1 L 58.9,62.7 L 50.3,56.5 L 41.1,40.8 L 23.5,25.4 Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- A: Cat alone, white on dark -->
+<div class="sample">
+  <svg width="160" height="140" viewBox="0 0 200 185">
+    <use href="#cat" x="0" y="0" width="200" height="200" fill="#e8e8f0"/>
+  </svg>
+  <span class="label">A — Silhouette only</span>
+</div>
+
+<!-- B: Cat + "BLACK CAT" below, clean -->
+<div class="sample">
+  <svg width="200" height="160" viewBox="0 0 200 210">
+    <use href="#cat" x="0" y="0" width="200" height="200" fill="#e8e8f0"/>
+    <line x1="30" y1="188" x2="170" y2="188" stroke="#c8a84a" stroke-width="0.8"/>
+    <text x="100" y="203" text-anchor="middle"
+          font-family="Georgia,serif" font-size="14" font-weight="bold"
+          letter-spacing="5" fill="#e8e8f0">BLACK CAT</text>
+  </svg>
+  <span class="label">B — Cat + serif name</span>
+</div>
+
+<!-- C: Cat + name right, horizontal -->
+<div class="sample">
+  <svg width="220" height="110" viewBox="0 0 280 140">
+    <!-- Cat scaled smaller, left side -->
+    <g transform="scale(0.68) translate(0, -10)">
+      <use href="#cat" x="0" y="0" width="200" height="200" fill="#e8e8f0"/>
+    </g>
+    <!-- Text right -->
+    <text x="148" y="55" font-family="Georgia,serif" font-size="17" font-weight="bold"
+          letter-spacing="3" fill="#e8e8f0">BLACK</text>
+    <line x1="148" y1="64" x2="272" y2="64" stroke="#c8a84a" stroke-width="0.7"/>
+    <text x="148" y="82" font-family="Georgia,serif" font-size="17" font-weight="bold"
+          letter-spacing="3" fill="#e8e8f0">CAT</text>
+    <text x="148" y="96" font-family="Arial,sans-serif" font-size="7.5"
+          letter-spacing="3.5" fill="#c8a84a">PILOT INSTRUMENTS</text>
+  </svg>
+  <span class="label">C — Horizontal layout</span>
+</div>
+
+<!-- D: Black cat in golden ring — Black Cat Studio -->
+<div class="sample" style="grid-column: span 3; align-self: start;">
+  <svg width="260" height="300" viewBox="-4 -4 208 252" style="display:block;margin:0 auto">
+    <!-- Subtle fill so black cat reads against dark bg -->
+    <circle cx="100" cy="100" r="91" fill="#181828"/>
+    <!-- Full cat scaled to fit entirely inside ring: scale≈0.775, centred -->
+    <use href="#cat" x="22.5" y="22.5" width="155" height="155" fill="#0d0d18"/>
+    <!-- Golden double ring -->
+    <circle cx="100" cy="100" r="96" fill="none" stroke="#c8a84a" stroke-width="1.4"/>
+    <circle cx="100" cy="100" r="90" fill="none" stroke="#c8a84a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <!-- Brand name in gold -->
+    <text x="100" y="218" text-anchor="middle"
+          font-family="Georgia,serif" font-size="9"
+          letter-spacing="4" fill="#c8a84a">BLACK CAT STUDIO</text>
+  </svg>
+  <span class="label">D — Black cat · golden ring</span>
+</div>
+
+<!-- E: Compact watch-dial size, white cat + name -->
+<div class="sample">
+  <svg width="200" height="75" viewBox="0 0 240 90">
+    <line x1="10" y1="8" x2="230" y2="8" stroke="#c8a84a" stroke-width="0.7"/>
+    <!-- Cat tiny, left -->
+    <g transform="translate(8, 10) scale(0.40)">
+      <use href="#cat" x="0" y="0" width="200" height="200" fill="#ddd8c8"/>
+    </g>
+    <!-- Text -->
+    <text x="106" y="36" font-family="Georgia,serif" font-size="16" font-weight="bold"
+          letter-spacing="4" fill="#ddd8c8">BLACK CAT</text>
+    <text x="106" y="52" font-family="Arial,sans-serif" font-size="7"
+          letter-spacing="4" fill="#c8a84a">PILOT INSTRUMENTS</text>
+    <line x1="10" y1="65" x2="230" y2="65" stroke="#c8a84a" stroke-width="0.7"/>
+  </svg>
+  <span class="label">E — Watch-dial size</span>
+</div>
+
+<!-- F: Cat only, inverted (white bg, dark cat) — how it would print -->
+<div class="sample" style="background:#f0ede8">
+  <svg width="160" height="140" viewBox="0 0 200 185">
+    <use href="#cat" x="0" y="0" width="200" height="200" fill="#111"/>
+  </svg>
+  <span class="label" style="color:#999">F — Dark on light</span>
+</div>
+
+</div>
+</body>
+</html>

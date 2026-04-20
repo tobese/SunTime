@@ -97,6 +97,7 @@ public class SunDial : SKXamlCanvas
         DrawNoonLabel(canvas, cx, cy, R);
         DrawDateField(canvas, cx, cy, R);
         DrawLocationLabel(canvas, cx, cy, R);
+        DrawBrandLogo(canvas, cx, cy, R);
     }
 
     // ── sky / ground arc ────────────────────────────────────
@@ -907,6 +908,91 @@ public class SunDial : SKXamlCanvas
         path.ArcTo(rect, startAngle, sweepAngle, false);
         path.Close();
         c.DrawPath(path, paint);
+    }
+
+    // ── brand logo badge ────────────────────────────────────
+
+    /// <summary>
+    /// Small fixed badge in the upper sky area (between dial centre and 12 o'clock).
+    /// Black cat silhouette inside a gold ring — "BLACK CAT STUDIO" in tiny lettering below.
+    /// </summary>
+    private static void DrawBrandLogo(SKCanvas c, float cx, float cy, float R)
+    {
+        float logoCx = cx;
+        float logoCy = cy - R * 0.38f;   // upper sky, between centre and the 12-label row
+        float logoR  = R * 0.115f;       // ring radius — deliberately small
+
+        // ── Circle fill so the dark cat reads against the sky ──
+        using var fillPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Fill,
+            Color = new SKColor(0x12, 0x12, 0x20, 0xE8)
+        };
+        c.DrawCircle(logoCx, logoCy, logoR, fillPaint);
+
+        // ── Cat silhouette ─────────────────────────────────────
+        // Original path is in 200×200 SVG space, centre ≈ (100,100).
+        // Farthest corner is ~118.7 units from centre; using /120 leaves a small margin.
+        float s = logoR / 120f;
+
+        float[] pts =
+        {
+            22.7f,25.9f, 24.6f,36.8f, 14.1f,43.5f, 11.9f,49.7f, 8.1f,55.7f,
+            10.3f,61.9f, 12.7f,63.5f, 21.9f,64.1f, 24.9f,66.8f, 24.9f,72.7f,
+            23.0f,83.2f, 23.2f,90.0f, 28.4f,102.4f, 35.9f,113.0f, 37.6f,117.6f,
+            39.7f,134.9f, 39.7f,150.3f, 38.1f,158.1f, 31.9f,162.4f, 31.4f,165.7f,
+            33.0f,168.4f, 40.0f,169.7f, 45.4f,167.0f, 55.4f,132.7f, 57.6f,136.2f,
+            60.0f,145.9f, 67.3f,157.6f, 67.3f,158.6f, 63.5f,160.8f, 60.0f,161.1f,
+            57.3f,163.2f, 56.5f,167.3f, 58.9f,169.5f, 103.8f,170.3f, 107.6f,169.5f,
+            111.9f,166.5f, 124.1f,169.5f, 160.0f,169.7f, 170.8f,170.8f, 185.9f,174.1f,
+            191.4f,174.1f, 191.1f,171.6f, 188.1f,169.5f, 174.9f,164.9f, 154.6f,162.2f,
+            127.6f,160.8f, 119.2f,157.8f, 116.2f,154.3f, 115.4f,151.1f, 117.0f,141.1f,
+            117.0f,130.8f, 115.7f,123.0f, 110.5f,106.5f, 103.2f,93.0f, 95.1f,84.1f,
+            88.9f,79.7f, 65.7f,71.1f, 58.9f,62.7f, 50.3f,56.5f, 41.1f,40.8f, 23.5f,25.4f
+        };
+
+        using var catPath = new SKPath();
+        catPath.MoveTo(logoCx + (pts[0] - 100f) * s, logoCy + (pts[1] - 100f) * s);
+        for (int i = 2; i < pts.Length; i += 2)
+            catPath.LineTo(logoCx + (pts[i] - 100f) * s, logoCy + (pts[i + 1] - 100f) * s);
+        catPath.Close();
+
+        using var catPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Fill,
+            Color = new SKColor(0x08, 0x08, 0x14, 0xF2)
+        };
+        c.DrawPath(catPath, catPaint);
+
+        // ── Gold outer ring ────────────────────────────────────
+        float ringW = Math.Max(0.8f, logoR * 0.055f);
+        using var ringPaint = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = ringW,
+            Color = new SKColor(0xC8, 0xA8, 0x4A, 0xBB)
+        };
+        c.DrawCircle(logoCx, logoCy, logoR + ringW * 0.5f, ringPaint);
+
+        // Gold inner hairline
+        using var innerRing = new SKPaint
+        {
+            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = Math.Max(0.4f, logoR * 0.022f),
+            Color = new SKColor(0xC8, 0xA8, 0x4A, 0x55)
+        };
+        c.DrawCircle(logoCx, logoCy, logoR * 0.90f, innerRing);
+
+        // ── "BLACK CAT STUDIO" lettering below ring ────────────
+        float textSize = Math.Max(5f, logoR * 0.26f);
+        using var textFont  = new SKFont(SKTypeface.FromFamilyName("Georgia"), textSize);
+        using var textPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Color = new SKColor(0xC8, 0xA8, 0x4A, 0x88)
+        };
+        float textY = logoCy + logoR + ringW + textSize * 1.40f;
+        c.DrawText("BLACK CAT STUDIO", logoCx, textY, SKTextAlign.Center, textFont, textPaint);
     }
 
     // ── angle helpers ───────────────────────────────────────
