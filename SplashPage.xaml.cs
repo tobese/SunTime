@@ -13,8 +13,8 @@ public sealed partial class SplashPage : Page
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private DispatcherTimer? _animTimer;
 
-    private const double RiseDurationSec = 4.5;
-    private const double HoldSec = 1.2;
+    private const double RiseDurationSec = 8.0;
+    private const double HoldSec = 1.5;
     private bool _navigated;
 
     public SplashPage()
@@ -48,9 +48,9 @@ public sealed partial class SplashPage : Page
         // Ease-out cubic — slow start, decelerates into final position
         double eased = 1.0 - Math.Pow(1.0 - t, 3);
 
-        // Sun travels from 3 radii below horizon to 2.5 radii above
-        float sunCenterY = horizonY + sunRadius * 3.0f
-                           - (float)(eased * sunRadius * 5.5f);
+        // Sun travels from 5 radii below horizon to 2.5 radii above
+        float sunCenterY = horizonY + sunRadius * 5.0f
+                           - (float)(eased * sunRadius * 7.5f);
 
         // ── Pre-dawn horizon glow (starts immediately, peaks near sunrise) ──
         double glowPeak = Math.Clamp(eased * 2.0, 0, 1);   // peaks halfway through rise
@@ -95,6 +95,10 @@ public sealed partial class SplashPage : Page
             canvas.DrawRect(0, 0, w, horizonY, skyPaint);
         }
 
+        // ── Clip everything sun-related to above the horizon ──
+        canvas.Save();
+        canvas.ClipRect(new SKRect(0, 0, w, horizonY));
+
         // ── Wide soft glow around sun ──
         float glowRadius = sunRadius * (3.0f + (float)eased * 2.0f);
         byte glowAlpha = (byte)(eased * 80);
@@ -109,68 +113,62 @@ public sealed partial class SplashPage : Page
         };
         canvas.DrawCircle(cx, sunCenterY, glowRadius, glowPaint);
 
-        // ── Soft corona rays — tapered wedges, low opacity ──
-        // Appear gradually as sun rises above horizon
-        double rayFraction = Math.Clamp((eased - 0.45) / 0.55, 0, 1);
-        if (rayFraction > 0)
+        // ── Solar corona rim + streamers — appear as sun clears horizon ──
+        double coronaFraction = Math.Clamp((eased - 0.50) / 0.50, 0, 1);
+        if (coronaFraction > 0)
         {
-            int rayCount = 16;
-            float rayInner = sunRadius * 1.08f;
-            float rayOuter = sunRadius * (1.9f + (float)rayFraction * 1.8f);
-            double halfWedge = Math.PI / rayCount * 0.55;  // half-angle of each wedge
-            byte rayAlpha = (byte)(rayFraction * 38);       // very subtle
-
-            using var rayPaint = new SKPaint
+            // Annular corona glow: transparent at centre, bright ring at sun edge, fading out
+            float coronaMaxR = sunRadius * 3.2f;
+            float sunEdgeFrac = sunRadius / coronaMaxR;
+            byte ca = (byte)(coronaFraction * 160);
+            using var coronaPaint = new SKPaint
             {
                 IsAntialias = true,
                 Style = SKPaintStyle.Fill,
-                Color = new SKColor(0xFF, 0xE0, 0x80, rayAlpha)
+                Shader = SKShader.CreateRadialGradient(
+                    new SKPoint(cx, sunCenterY), coronaMaxR,
+                    new SKColor[]
+                    {
+                        SKColors.Transparent,
+                        SKColors.Transparent,
+                        new(0xFF, 0xF4, 0x90, ca),
+                        new(0xFF, 0xD0, 0x50, (byte)(ca * 0.35f)),
+                        new(0xFF, 0xA0, 0x20, (byte)(ca * 0.08f)),
+                        SKColors.Transparent,
+                    },
+                    new float[]
+                    {
+                        0f,
+                        sunEdgeFrac * 0.90f,
+                        sunEdgeFrac * 1.00f,
+                        sunEdgeFrac * 1.25f,
+                        sunEdgeFrac * 1.75f,
+                        1f,
+                    },
+                    SKShaderTileMode.Clamp)
             };
-            using var rayPath = new SKPath();
+            canvas.DrawCircle(cx, sunCenterY, coronaMaxR, coronaPaint);
 
-            for (int i = 0; i < rayCount; i++)
-            {
-                double angle = 2.0 * Math.PI * i / rayCount;
-
-                float ax = cx + rayInner * (float)Math.Cos(angle - halfWedge);
-                float ay = sunCenterY + rayInner * (float)Math.Sin(angle - halfWedge);
-                float bx = cx + rayInner * (float)Math.Cos(angle + halfWedge);
-                float by = sunCenterY + rayInner * (float)Math.Sin(angle + halfWedge);
-                float tx = cx + rayOuter * (float)Math.Cos(angle);
-                float ty = sunCenterY + rayOuter * (float)Math.Sin(angle);
-
-                rayPath.MoveTo(ax, ay);
-                rayPath.LineTo(tx, ty);
-                rayPath.LineTo(bx, by);
-                rayPath.Close();
-                canvas.DrawPath(rayPath, rayPaint);
-                rayPath.Reset();
-            }
-
-            // Second pass — offset by half a ray spacing, even more subtle
-            byte rayAlpha2 = (byte)(rayFraction * 22);
-            using var rayPaint2 = new SKPaint
+            // Soft corona streamers — thin irregular lines radiating from disc edge
+            int streamCount = 14;
+            using var streamPaint = new SKPaint
             {
                 IsAntialias = true,
-                Style = SKPaintStyle.Fill,
-                Color = new SKColor(0xFF, 0xD0, 0x60, rayAlpha2)
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.9f,
+                StrokeCap = SKStrokeCap.Round,
+                Color = new SKColor(0xFF, 0xEC, 0x88, (byte)(coronaFraction * 28))
             };
-            for (int i = 0; i < rayCount; i++)
+            for (int i = 0; i < streamCount; i++)
             {
-                double angle = 2.0 * Math.PI * i / rayCount + Math.PI / rayCount;
-                float ax = cx + rayInner * (float)Math.Cos(angle - halfWedge);
-                float ay = sunCenterY + rayInner * (float)Math.Sin(angle - halfWedge);
-                float bx = cx + rayInner * (float)Math.Cos(angle + halfWedge);
-                float by = sunCenterY + rayInner * (float)Math.Sin(angle + halfWedge);
-                float tx = cx + rayOuter * (float)Math.Cos(angle);
-                float ty = sunCenterY + rayOuter * (float)Math.Sin(angle);
-
-                rayPath.MoveTo(ax, ay);
-                rayPath.LineTo(tx, ty);
-                rayPath.LineTo(bx, by);
-                rayPath.Close();
-                canvas.DrawPath(rayPath, rayPaint2);
-                rayPath.Reset();
+                double angle = 2.0 * Math.PI * i / streamCount;
+                // Vary length irregularly to feel organic
+                float len = sunRadius * (1.2f + 1.1f * (float)Math.Abs(Math.Sin(angle * 1.7 + 0.4)));
+                float ix = cx + sunRadius * (float)Math.Cos(angle);
+                float iy = sunCenterY + sunRadius * (float)Math.Sin(angle);
+                float ox = cx + (sunRadius + len) * (float)Math.Cos(angle);
+                float oy = sunCenterY + (sunRadius + len) * (float)Math.Sin(angle);
+                canvas.DrawLine(ix, iy, ox, oy, streamPaint);
             }
         }
 
@@ -186,6 +184,8 @@ public sealed partial class SplashPage : Page
                 null, SKShaderTileMode.Clamp)
         };
         canvas.DrawCircle(cx, sunCenterY, sunRadius, sunPaint);
+
+        canvas.Restore();   // end horizon clip
 
         // ── Horizon line ──
         using var horizonPaint = new SKPaint

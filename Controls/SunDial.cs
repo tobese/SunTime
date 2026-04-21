@@ -167,11 +167,11 @@ public class SunDial : SKXamlCanvas
 
     private static void DrawStraps(SKCanvas c, float cx, float cy, float R, float canvasH)
     {
-        float halfW  = R * 0.80f;
-        float left   = cx - halfW;
-        float right  = cx + halfW;
+        float halfW = R * 0.80f;
+        float left = cx - halfW;
+        float right = cx + halfW;
         float corner = R * 0.16f;
-        float gap    = R * 0.32f;   // how far the strap slides under the dial case
+        float gap = R * 0.32f;   // how far the strap slides under the dial case
 
         float topT = 0f;
         float topB = cy - R + gap;
@@ -191,45 +191,52 @@ public class SunDial : SKXamlCanvas
 
         using var gradPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateLinearGradient(
                 new SKPoint(left, 0), new SKPoint(right, 0),
                 bandGrad, bandPos, SKShaderTileMode.Clamp)
         };
         using var borderPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1f, Color = new SKColor(0x3A, 0x3A, 0x52)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1f,
+            Color = new SKColor(0x3A, 0x3A, 0x52)
         };
 
         var topRR = new SKRoundRect(new SKRect(left, topT, right, topB), corner);
         var botRR = new SKRoundRect(new SKRect(left, botT, right, botB), corner);
-        c.DrawRoundRect(topRR, gradPaint);  c.DrawRoundRect(topRR, borderPaint);
-        c.DrawRoundRect(botRR, gradPaint);  c.DrawRoundRect(botRR, borderPaint);
+        c.DrawRoundRect(topRR, gradPaint); c.DrawRoundRect(topRR, borderPaint);
+        c.DrawRoundRect(botRR, gradPaint); c.DrawRoundRect(botRR, borderPaint);
 
         // ── Edge stitching (dashed lines inset from each side) ──
         float sInset = halfW * 0.11f;
         using var stitchPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.7f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
             Color = new SKColor(0x52, 0x52, 0x70, 0x90),
             PathEffect = SKPathEffect.CreateDash(new[] { 3.5f, 2.5f }, 0f)
         };
         float sCornerOff = corner * 0.55f;
         // top band
-        c.DrawLine(left  + sInset, topT + sCornerOff, left  + sInset, topB, stitchPaint);
+        c.DrawLine(left + sInset, topT + sCornerOff, left + sInset, topB, stitchPaint);
         c.DrawLine(right - sInset, topT + sCornerOff, right - sInset, topB, stitchPaint);
         // bottom band
-        c.DrawLine(left  + sInset, botT, left  + sInset, botB - sCornerOff, stitchPaint);
+        c.DrawLine(left + sInset, botT, left + sInset, botB - sCornerOff, stitchPaint);
         c.DrawLine(right - sInset, botT, right - sInset, botB - sCornerOff, stitchPaint);
 
         // ── Horizontal texture ribs (rubber-band feel) ───────────
         float ribSpacing = R * 0.09f;
-        float ribInset   = corner * 0.40f;
+        float ribInset = corner * 0.40f;
         using var ribPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.5f, Color = new SKColor(0x08, 0x08, 0x14, 0x60)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.5f,
+            Color = new SKColor(0x08, 0x08, 0x14, 0x60)
         };
         // top band: ribs from dial edge upward
         for (float y = topB - ribSpacing; y > topT + corner; y -= ribSpacing)
@@ -239,13 +246,22 @@ public class SunDial : SKXamlCanvas
             c.DrawLine(left + ribInset, y, right - ribInset, y, ribPaint);
 
         // ── Punch holes — bottom strap, centred vertically ───────
-        float holeR      = halfW * 0.038f;
-        float holePitch  = halfW * 0.20f;
-        float holeCy     = (botT + botB) * 0.5f;
-        using var holeFill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill,
-            Color = new SKColor(0x08, 0x08, 0x14) };
-        using var holeRim = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.7f, Color = new SKColor(0x42, 0x42, 0x5A) };
+        float holeR = halfW * 0.038f;
+        float holePitch = halfW * 0.20f;
+        float holeCy = (botT + botB) * 0.5f;
+        using var holeFill = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Color = new SKColor(0x08, 0x08, 0x14)
+        };
+        using var holeRim = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
+            Color = new SKColor(0x42, 0x42, 0x5A)
+        };
         for (int i = -2; i <= 2; i++)
         {
             float hx = cx + i * holePitch;
@@ -257,12 +273,14 @@ public class SunDial : SKXamlCanvas
         float bkW = halfW * 0.52f;
         float bkH = R * 0.090f;
         float bkCy = topT + (topB - topT) * 0.33f;
-        float bkL  = cx - bkW * 0.5f,  bkR = cx + bkW * 0.5f;
-        float bkT  = bkCy - bkH * 0.5f, bkB = bkCy + bkH * 0.5f;
+        float bkL = cx - bkW * 0.5f, bkR = cx + bkW * 0.5f;
+        float bkT = bkCy - bkH * 0.5f, bkB = bkCy + bkH * 0.5f;
         using var buckleStroke = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.8f, Color = new SKColor(0x50, 0x50, 0x6A),
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.8f,
+            Color = new SKColor(0x50, 0x50, 0x6A),
             StrokeCap = SKStrokeCap.Round
         };
         // Outer frame
@@ -272,8 +290,10 @@ public class SunDial : SKXamlCanvas
         // Pin (horizontal rod across one half, slightly past edges)
         using var pinStroke = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.4f, Color = new SKColor(0x60, 0x60, 0x80),
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.4f,
+            Color = new SKColor(0x60, 0x60, 0x80),
             StrokeCap = SKStrokeCap.Round
         };
         float pinY = (bkT + bkB) * 0.5f;
@@ -322,35 +342,45 @@ public class SunDial : SKXamlCanvas
         var outerRect = new SKRect(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
         using var hiPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x55)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            Color = new SKColor(0xFF, 0xFF, 0xFF, 0x55)
         };
         using var shPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f, Color = new SKColor(0x00, 0x00, 0x00, 0x55)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            Color = new SKColor(0x00, 0x00, 0x00, 0x55)
         };
         c.DrawArc(outerRect, 195f, 165f, false, hiPaint);   // top-left arc
-        c.DrawArc(outerRect, 15f,  165f, false, shPaint);   // bottom-right arc
+        c.DrawArc(outerRect, 15f, 165f, false, shPaint);   // bottom-right arc
 
         // Inner shadow edge flush with dial
         using var innerEdgePaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f, Color = new SKColor(0x18, 0x18, 0x24, 0xD0)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            Color = new SKColor(0x18, 0x18, 0x24, 0xD0)
         };
         c.DrawCircle(cx, cy, innerR, innerEdgePaint);
 
         // ── Tick marks: 60 positions, major every 5 ──────────
         using var majTickPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f, Color = new SKColor(0xE4, 0xE4, 0xF0)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            Color = new SKColor(0xE4, 0xE4, 0xF0)
         };
         using var minTickPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.8f, Color = new SKColor(0xA8, 0xA8, 0xB8, 0xCC)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.8f,
+            Color = new SKColor(0xA8, 0xA8, 0xB8, 0xCC)
         };
 
         for (int i = 0; i < 60; i++)
@@ -361,7 +391,7 @@ public class SunDial : SKXamlCanvas
             float sin = (float)Math.Sin(angle);
 
             bool major = i % 5 == 0;
-            float tickLen   = major ? bezelW * 0.48f : bezelW * 0.26f;
+            float tickLen = major ? bezelW * 0.36f : bezelW * 0.20f;
             float tickInner = outerR - tickLen;
 
             c.DrawLine(
@@ -401,9 +431,9 @@ public class SunDial : SKXamlCanvas
         }
 
         // ── Triangle pointer at 12 o'clock ────────────────────
-        float triTip    = outerR - bezelW * 0.07f;
-        float triBase   = outerR - bezelW * 0.52f;
-        float triHalfW  = bezelW * 0.20f;
+        float triTip = outerR - bezelW * 0.07f;
+        float triBase = outerR - bezelW * 0.52f;
+        float triHalfW = bezelW * 0.20f;
         using var triPaint = new SKPaint
         {
             IsAntialias = true,
@@ -424,7 +454,7 @@ public class SunDial : SKXamlCanvas
     {
         if (string.IsNullOrEmpty(LocationLabel)) return;
 
-        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.065f);
+        using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.065f);
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x60) };
         float y = cy - R * 0.808f + font.Size * 0.35f;
         c.DrawText(LocationLabel, cx, y, SKTextAlign.Center, font, paint);
@@ -534,7 +564,7 @@ public class SunDial : SKXamlCanvas
 
         // Center dot
         using var dotPaint = new SKPaint { IsAntialias = true, Color = SKColors.White };
-        c.DrawCircle(cx, cy, 3f, dotPaint);
+        c.DrawCircle(cx, cy, 1.5f, dotPaint);
     }
 
     // ── daytime / nighttime duration numbers ───────────────
@@ -575,13 +605,13 @@ public class SunDial : SKXamlCanvas
         if (_yesterdaySun is not null && SettingsService.ShowWeekDiffs)
         {
             DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunrise, _sun.Sunrise, invertGain: true);
-            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset,  _sun.Sunset,  invertGain: false);
+            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset, _sun.Sunset, invertGain: false);
         }
 
         // Rise dot
         DrawArcDot(c, cx, cy, R, _sun.Sunrise, new SKColor(0xFF, 0xA5, 0x00));
         // Set dot
-        DrawArcDot(c, cx, cy, R, _sun.Sunset,  new SKColor(0xFF, 0x63, 0x47));
+        DrawArcDot(c, cx, cy, R, _sun.Sunset, new SKColor(0xFF, 0x63, 0x47));
         // Noon dot (always shown; suppressed only when NoonAtTop)
         if (!SettingsService.NoonAtTop)
             DrawArcDot(c, cx, cy, R, _sun.SolarNoon, new SKColor(0xFF, 0xD7, 0x00));
@@ -606,15 +636,15 @@ public class SunDial : SKXamlCanvas
         if (_yesterdaySun is not null)
         {
             riseDelta = (_sun.Sunrise.TimeOfDay - _yesterdaySun.Sunrise.TimeOfDay).TotalMinutes;
-            setDelta  = (_sun.Sunset.TimeOfDay  - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
+            setDelta = (_sun.Sunset.TimeOfDay - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
         }
         double? visibleRiseDelta = SettingsService.ShowWeekDiffs ? riseDelta : null;
-        double? visibleSetDelta  = SettingsService.ShowWeekDiffs ? setDelta  : null;
+        double? visibleSetDelta = SettingsService.ShowWeekDiffs ? setDelta : null;
 
         DrawRiseSetField(c, cx, cy, R, _sun.Sunrise, MarkerType.Rise,
                          new SKColor(0xFF, 0xA5, 0x00), visibleRiseDelta, invertDelta: true);
-        DrawRiseSetField(c, cx, cy, R, _sun.Sunset,  MarkerType.Set,
-                         new SKColor(0xFF, 0x63, 0x47), visibleSetDelta,  invertDelta: false);
+        DrawRiseSetField(c, cx, cy, R, _sun.Sunset, MarkerType.Set,
+                         new SKColor(0xFF, 0x63, 0x47), visibleSetDelta, invertDelta: false);
     }
 
     /// <summary>Fixed noon time label — drawn outside rotation, always upright.</summary>
@@ -625,7 +655,7 @@ public class SunDial : SKXamlCanvas
         var color = new SKColor(0xFF, 0xD7, 0x00);
         float fontSize = R * 0.085f;
         float rowY = cy - R * 0.65f;
-        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
         using var paint = new SKPaint { IsAntialias = true, Color = color };
         c.DrawText($"{_sun.SolarNoon:HH:mm}", cx, rowY + fontSize * 0.35f,
                    SKTextAlign.Center, font, paint);
@@ -642,27 +672,28 @@ public class SunDial : SKXamlCanvas
         bool hasDelta = deltaMinutes.HasValue &&
                         (int)Math.Round(Math.Abs(deltaMinutes.Value) * 7) != 0;
 
-        float fontSize      = R * 0.078f;
+        float fontSize = R * 0.078f;
         float deltaFontSize = R * 0.065f;
-        float padY          = R * 0.030f;
-        float lineGap       = R * 0.018f;
-        float corner        = R * 0.028f;
+        float padY = R * 0.030f;
+        float lineGap = R * 0.018f;
+        float corner = R * 0.028f;
 
         float boxH = padY * 2 + fontSize + (hasDelta ? lineGap + deltaFontSize : 0f);
         float boxW = R * 0.26f;
 
         // Fixed row at the "12" label height (nr = R*0.58*1.12 = R*0.65 above centre)
-        float rowY    = cy - R * 0.65f;
+        float rowY = cy - R * 0.65f;
         float fieldCx = type == MarkerType.Rise ? cx - R * 0.44f : cx + R * 0.44f;
 
         float boxLeft = fieldCx - boxW / 2f;
-        float boxTop  = rowY - boxH / 2f;
+        float boxTop = rowY - boxH / 2f;
         var rect = new SKRect(boxLeft, boxTop, boxLeft + boxW, boxTop + boxH);
 
         // ── Background ───────────────────────────────────────
         using var bgPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
             Color = new SKColor(0x18, 0x18, 0x28, 0xCC)
         };
         c.DrawRoundRect(rect, corner, corner, bgPaint);
@@ -670,7 +701,8 @@ public class SunDial : SKXamlCanvas
         // ── Border: steel-style with highlight/shadow bevel ──
         using var borderPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
             StrokeWidth = 1.1f,
             Color = new SKColor(0xB0, 0xB0, 0xC4, 0xCC)
         };
@@ -679,13 +711,17 @@ public class SunDial : SKXamlCanvas
         // Highlight top-left edge, shadow bottom-right
         using var hiPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.7f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
+            Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
         };
         using var shPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.7f, Color = new SKColor(0x00, 0x00, 0x00, 0x50)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
+            Color = new SKColor(0x00, 0x00, 0x00, 0x50)
         };
         // Top + left highlight
         c.DrawLine(rect.Left + corner, rect.Top, rect.Right - corner, rect.Top, hiPaint);
@@ -695,11 +731,11 @@ public class SunDial : SKXamlCanvas
         c.DrawLine(rect.Right, rect.Top + corner, rect.Right, rect.Bottom - corner, shPaint);
 
         // ── Time text — vertically centred in box ────────────
-        float boxCy  = rowY;
-        float timeY  = hasDelta
+        float boxCy = rowY;
+        float timeY = hasDelta
             ? boxTop + padY + fontSize * 0.78f          // nudge up when delta row below
             : boxCy + fontSize * 0.35f;                 // true vertical centre
-        using var timeFont  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var timeFont = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
         using var timePaint = new SKPaint { IsAntialias = true, Color = color };
         c.DrawText($"{time:HH:mm}", fieldCx, timeY, SKTextAlign.Center, timeFont, timePaint);
 
@@ -712,7 +748,7 @@ public class SunDial : SKXamlCanvas
             var deltaColor = weeklyDelta > 0
                 ? new SKColor(0x66, 0xBB, 0x6A)
                 : new SKColor(0xEF, 0x53, 0x50);
-            using var deltaFont  = new SKFont(SKTypeface.FromFamilyName("Arial"), deltaFontSize);
+            using var deltaFont = new SKFont(SKTypeface.FromFamilyName("Arial"), deltaFontSize);
             using var deltaPaint = new SKPaint { IsAntialias = true, Color = deltaColor };
             c.DrawText(deltaStr, fieldCx, timeY + lineGap + deltaFontSize * 0.78f,
                        SKTextAlign.Center, deltaFont, deltaPaint);
@@ -725,10 +761,10 @@ public class SunDial : SKXamlCanvas
         string dateStr = _localNow.ToString("yyyy-MM-dd");
 
         float fontSize = R * 0.078f;
-        float padY     = R * 0.030f;
-        float corner   = R * 0.028f;
-        float boxW     = R * 0.52f;
-        float boxH     = padY * 2 + fontSize;
+        float padY = R * 0.030f;
+        float corner = R * 0.028f;
+        float boxW = R * 0.52f;
+        float boxH = padY * 2 + fontSize;
 
         // Between the "0" label (cy + R*0.65) and the inner rim (cy + R) → midpoint ~cy + R*0.82
         float boxCx = cx;
@@ -738,34 +774,41 @@ public class SunDial : SKXamlCanvas
 
         using var bgPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
             Color = new SKColor(0x18, 0x18, 0x28, 0xCC)
         };
         c.DrawRoundRect(rect, corner, corner, bgPaint);
 
         using var borderPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.1f, Color = new SKColor(0xB0, 0xB0, 0xC4, 0xCC)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.1f,
+            Color = new SKColor(0xB0, 0xB0, 0xC4, 0xCC)
         };
         c.DrawRoundRect(rect, corner, corner, borderPaint);
 
         using var hiPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.7f, Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
+            Color = new SKColor(0xFF, 0xFF, 0xFF, 0x40)
         };
         using var shPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
-            StrokeWidth = 0.7f, Color = new SKColor(0x00, 0x00, 0x00, 0x50)
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 0.7f,
+            Color = new SKColor(0x00, 0x00, 0x00, 0x50)
         };
         c.DrawLine(rect.Left + corner, rect.Top, rect.Right - corner, rect.Top, hiPaint);
         c.DrawLine(rect.Left, rect.Top + corner, rect.Left, rect.Bottom - corner, hiPaint);
         c.DrawLine(rect.Left + corner, rect.Bottom, rect.Right - corner, rect.Bottom, shPaint);
         c.DrawLine(rect.Right, rect.Top + corner, rect.Right, rect.Bottom - corner, shPaint);
 
-        using var font  = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
+        using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(0xEC, 0xEC, 0xF4) };
         c.DrawText(dateStr, boxCx, boxCy + fontSize * 0.35f, SKTextAlign.Center, font, paint);
     }
@@ -919,16 +962,8 @@ public class SunDial : SKXamlCanvas
     private static void DrawBrandLogo(SKCanvas c, float cx, float cy, float R)
     {
         float logoCx = cx;
-        float logoCy = cy - R * 0.38f;   // upper sky, between centre and the 12-label row
-        float logoR  = R * 0.115f;       // ring radius — deliberately small
-
-        // ── Circle fill so the dark cat reads against the sky ──
-        using var fillPaint = new SKPaint
-        {
-            IsAntialias = true, Style = SKPaintStyle.Fill,
-            Color = new SKColor(0x12, 0x12, 0x20, 0xE8)
-        };
-        c.DrawCircle(logoCx, logoCy, logoR, fillPaint);
+        float logoCy = cy - R * 0.07f;   // upper sky, above dial centre
+        float logoR = R * 0.115f;       // ring radius — deliberately small
 
         // ── Cat silhouette ─────────────────────────────────────
         // Original path is in 200×200 SVG space, centre ≈ (100,100).
@@ -959,7 +994,8 @@ public class SunDial : SKXamlCanvas
 
         using var catPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
             Color = new SKColor(0x08, 0x08, 0x14, 0xF2)
         };
         c.DrawPath(catPath, catPaint);
@@ -968,7 +1004,8 @@ public class SunDial : SKXamlCanvas
         float ringW = Math.Max(0.8f, logoR * 0.055f);
         using var ringPaint = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
             StrokeWidth = ringW,
             Color = new SKColor(0xC8, 0xA8, 0x4A, 0xBB)
         };
@@ -977,22 +1014,40 @@ public class SunDial : SKXamlCanvas
         // Gold inner hairline
         using var innerRing = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
             StrokeWidth = Math.Max(0.4f, logoR * 0.022f),
             Color = new SKColor(0xC8, 0xA8, 0x4A, 0x55)
         };
         c.DrawCircle(logoCx, logoCy, logoR * 0.90f, innerRing);
 
-        // ── "BLACK CAT STUDIO" lettering below ring ────────────
-        float textSize = Math.Max(5f, logoR * 0.26f);
-        using var textFont  = new SKFont(SKTypeface.FromFamilyName("Georgia"), textSize);
+        // ── Notional diameter line — positions the text band, not drawn ──
+        float divY = logoCy + logoR * 0.58f;
+
+        // ── "BLACK · CAT · STUDIO" — Black left of rim, Cat centred, Studio right ──
+        float textSize = Math.Max(5f, logoR * 0.24f);
+        float textY    = divY + (logoCy + logoR - divY) * 0.50f + textSize * 0.35f;
+        float rimGap   = logoR * 0.06f;   // small breathing space between words and ring edge
+
+        using var textFont = new SKFont(
+            SKTypeface.FromFamilyName("Georgia", SKFontStyleWeight.Bold,
+                SKFontStyleWidth.Normal, SKFontStyleSlant.Upright), textSize);
         using var textPaint = new SKPaint
         {
             IsAntialias = true,
-            Color = new SKColor(0xC8, 0xA8, 0x4A, 0x88)
+            Style = SKPaintStyle.StrokeAndFill,
+            StrokeWidth = textSize * 0.12f,
+            Color = new SKColor(0xA8, 0x84, 0x28, 0xCC)
         };
-        float textY = logoCy + logoR + ringW + textSize * 1.40f;
-        c.DrawText("BLACK CAT STUDIO", logoCx, textY, SKTextAlign.Center, textFont, textPaint);
+
+        float catY = divY + (logoCy + logoR - divY) * 0.5f + textSize * 0.35f;   // between cat and lower rim
+
+        // "BLACK" — right-aligned, ending at the left rim
+        c.DrawText("BLACK",  logoCx - logoR, catY, SKTextAlign.Right,  textFont, textPaint);
+        // "CAT"   — centred below the ring
+        c.DrawText("CAT",    logoCx,         catY, SKTextAlign.Center,  textFont, textPaint);
+        // "STUDIO"— left-aligned, starting from the right rim
+        c.DrawText("STUDIO", logoCx + logoR, catY, SKTextAlign.Left,   textFont, textPaint);
     }
 
     // ── angle helpers ───────────────────────────────────────
