@@ -25,28 +25,28 @@ public static class SettingsService
     /// <summary>Show the daylight / nighttime duration labels inside the ring.</summary>
     public static bool ShowDurations
     {
-        get => GetBool(ShowDurationsKey, defaultValue: true);
+        get => GetBool(ShowDurationsKey, defaultValue: false);
         set => SetBool(ShowDurationsKey, value);
     }
 
     /// <summary>Show the solar noon (apex) marker and its time label.</summary>
     public static bool ShowApexTime
     {
-        get => GetBool(ShowApexTimeKey, defaultValue: true);
+        get => GetBool(ShowApexTimeKey, defaultValue: false);
         set => SetBool(ShowApexTimeKey, value);
     }
 
     /// <summary>Show the day-over-day diff sectors and ±m/wk annotations.</summary>
     public static bool ShowWeekDiffs
     {
-        get => GetBool(ShowWeekDiffsKey, defaultValue: true);
+        get => GetBool(ShowWeekDiffsKey, defaultValue: false);
         set => SetBool(ShowWeekDiffsKey, value);
     }
 
     /// <summary>Show the current solar elevation angle near the sun icon.</summary>
     public static bool ShowSunAngle
     {
-        get => GetBool(ShowSunAngleKey, defaultValue: true);
+        get => GetBool(ShowSunAngleKey, defaultValue: false);
         set => SetBool(ShowSunAngleKey, value);
     }
 

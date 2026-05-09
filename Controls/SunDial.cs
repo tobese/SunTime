@@ -10,13 +10,16 @@ public class SunDial : SKXamlCanvas
 {
     private enum MarkerType { Rise, Set, Noon }
     private SolarCalculator.SunData? _sun;
-    private SolarCalculator.SunData? _yesterdaySun;
+    private SolarCalculator.SunData? _lastWeekSun;
     private DateTime _localNow;
     private DateTime _animatedLocalNow;
     private readonly DispatcherTimer _animTimer;
 
     /// <summary>Location string drawn in the bottom strap (e.g. "59.33°N 18.07°E").</summary>
     public string LocationLabel { get; set; } = "";
+
+    /// <summary>When true, the sun icon is hidden (use during preset transitions).</summary>
+    public bool SunHidden { get; set; }
 
     public SunDial()
     {
@@ -40,13 +43,23 @@ public class SunDial : SKXamlCanvas
         _animTimer.Start();
     }
 
-    public void Update(SolarCalculator.SunData sun, DateTime localNow, SolarCalculator.SunData? yesterdaySun = null)
+    public void Update(SolarCalculator.SunData sun, DateTime localNow, SolarCalculator.SunData? lastWeekSun = null)
     {
         _sun = sun;
         _localNow = localNow;
-        _yesterdaySun = yesterdaySun;
+        _lastWeekSun = lastWeekSun;
         // Seed animated time on first call to avoid lerp from epoch
         if (_animatedLocalNow == default) _animatedLocalNow = localNow;
+    }
+
+    /// <summary>
+    /// Immediately snap the animated sun to the target time, bypassing the lerp.
+    /// Call this after a large time jump (preset buttons) so the sun doesn't drag across the dial.
+    /// </summary>
+    public void SnapPosition()
+    {
+        _animatedLocalNow = _localNow;
+        Invalidate();
     }
 
     // ── paint entry ─────────────────────────────────────────
@@ -76,10 +89,16 @@ public class SunDial : SKXamlCanvas
         canvas.Save();
         if (SettingsService.NoonAtTop)
         {
-            double noonAngle = HourToAngle(_sun.SolarNoon.Hour + _sun.SolarNoon.Minute / 60.0
-                                           + _sun.SolarNoon.Second / 3600.0);
-            double rotRad = Math.PI / 2.0 - noonAngle;
-            canvas.RotateDegrees((float)(-rotRad * 180.0 / Math.PI), cx, cy);
+            double noonHour  = _sun.SolarNoon.Hour + _sun.SolarNoon.Minute / 60.0
+                                                   + _sun.SolarNoon.Second / 3600.0;
+            double noonAngle = HourToAngle(noonHour);
+            double rotRad    = Math.PI / 2.0 - noonAngle;
+            float  rotDeg    = (float)(-rotRad * 180.0 / Math.PI);
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                $"[NoonAtTop] SolarNoon={_sun.SolarNoon:HH:mm:ss}  noonHour={noonHour:F3}  rotDeg={rotDeg:F1}°");
+#endif
+            canvas.RotateDegrees(rotDeg, cx, cy);
         }
 
         DrawSkyGround(canvas, cx, cy, R, _sun);
@@ -493,6 +512,19 @@ public class SunDial : SKXamlCanvas
             Color = new SKColor(0xFF, 0xFF, 0xFF, 0xB0)
         };
 
+        // When NoonAtTop rotates the canvas, text rotates with it and becomes
+        // unreadable at extreme positions. Counter-rotate each label individually
+        // so it stays upright on screen regardless of dial rotation.
+        float textCounterRotDeg = 0f;
+        if (SettingsService.NoonAtTop && _sun is not null)
+        {
+            double noonHour = _sun.SolarNoon.Hour + _sun.SolarNoon.Minute / 60.0
+                              + _sun.SolarNoon.Second / 3600.0;
+            double noonAngle = HourToAngle(noonHour);
+            double rotRad    = Math.PI / 2.0 - noonAngle;
+            textCounterRotDeg = (float)(rotRad * 180.0 / Math.PI);
+        }
+
         for (int h = 0; h < 24; h++)
         {
             double a = HourToAngle(h);
@@ -506,8 +538,13 @@ public class SunDial : SKXamlCanvas
             {
                 float nr = r * 1.12f;
                 float tx = cx + nr * cos;
-                float ty = cy - nr * sin + numFont.Size * 0.35f;
-                c.DrawText(h.ToString(), tx, ty, SKTextAlign.Center, numFont, numPaint);
+                float ty = cy - nr * sin;
+                c.Save();
+                c.Translate(tx, ty);
+                if (textCounterRotDeg != 0f)
+                    c.RotateDegrees(textCounterRotDeg);
+                c.DrawText(h.ToString(), 0, numFont.Size * 0.35f, SKTextAlign.Center, numFont, numPaint);
+                c.Restore();
             }
         }
 
@@ -602,10 +639,10 @@ public class SunDial : SKXamlCanvas
     {
         if (_sun is null) return;
 
-        if (_yesterdaySun is not null && SettingsService.ShowWeekDiffs)
+        if (_lastWeekSun is not null && SettingsService.ShowWeekDiffs)
         {
-            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunrise, _sun.Sunrise, invertGain: true);
-            DrawDiffSector(c, cx, cy, R, _yesterdaySun.Sunset, _sun.Sunset, invertGain: false);
+            DrawDiffArc(c, cx, cy, R, _lastWeekSun.Sunrise, _sun.Sunrise, invertGain: true);
+            DrawDiffArc(c, cx, cy, R, _lastWeekSun.Sunset, _sun.Sunset, invertGain: false);
         }
 
         // Rise dot
@@ -633,10 +670,10 @@ public class SunDial : SKXamlCanvas
         if (_sun is null) return;
 
         double? riseDelta = null, setDelta = null;
-        if (_yesterdaySun is not null)
+        if (_lastWeekSun is not null)
         {
-            riseDelta = (_sun.Sunrise.TimeOfDay - _yesterdaySun.Sunrise.TimeOfDay).TotalMinutes;
-            setDelta = (_sun.Sunset.TimeOfDay - _yesterdaySun.Sunset.TimeOfDay).TotalMinutes;
+            riseDelta = (_sun.Sunrise.TimeOfDay - _lastWeekSun.Sunrise.TimeOfDay).TotalMinutes;
+            setDelta = (_sun.Sunset.TimeOfDay - _lastWeekSun.Sunset.TimeOfDay).TotalMinutes;
         }
         double? visibleRiseDelta = SettingsService.ShowWeekDiffs ? riseDelta : null;
         double? visibleSetDelta = SettingsService.ShowWeekDiffs ? setDelta : null;
@@ -743,8 +780,8 @@ public class SunDial : SKXamlCanvas
         if (hasDelta)
         {
             double displayDelta = invertDelta ? -deltaMinutes!.Value : deltaMinutes!.Value;
-            int weeklyDelta = (int)Math.Round(displayDelta * 7);
-            string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}m/wk" : $"{weeklyDelta}m/wk";
+            int weeklyDelta = (int)Math.Round(displayDelta);
+            string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}" : $"{weeklyDelta}";
             var deltaColor = weeklyDelta > 0
                 ? new SKColor(0x66, 0xBB, 0x6A)
                 : new SKColor(0xEF, 0x53, 0x50);
@@ -864,7 +901,7 @@ public class SunDial : SKXamlCanvas
 
     private void DrawSun(SKCanvas c, float cx, float cy, float R)
     {
-        if (_sun is null) return;
+        if (_sun is null || SunHidden) return;
 
         double fraction = _animatedLocalNow.TimeOfDay.TotalHours / 24.0;
         double a = HourToAngle(fraction * 24.0);
@@ -918,39 +955,80 @@ public class SunDial : SKXamlCanvas
         }
     }
 
-    private static void DrawDiffSector(SKCanvas c, float cx, float cy, float R,
-                                        DateTime yesterdayTime, DateTime todayTime,
-                                        bool invertGain)
+    /// <summary>
+    /// Annular arc band between R*0.88 and R showing the angular shift between
+    /// yesterday's and today's event time. Filled with a translucent base colour
+    /// plus a diagonal hatching overlay for colorblind accessibility:
+    /// gaining daylight → "/" lines (+45°), losing → "\" lines (−45°).
+    /// </summary>
+    private static void DrawDiffArc(SKCanvas c, float cx, float cy, float R,
+                                     DateTime yesterdayTime, DateTime todayTime,
+                                     bool invertGain)
     {
         float yesterdayDeg = HourToSkiaDeg(yesterdayTime);
-        float todayDeg = HourToSkiaDeg(todayTime);
+        float todayDeg     = HourToSkiaDeg(todayTime);
 
         float diff = todayDeg - yesterdayDeg;
-        if (diff > 180f) diff -= 360f;
+        if (diff >  180f) diff -= 360f;
         if (diff < -180f) diff += 360f;
-
         if (Math.Abs(diff) < 0.01f) return;
 
         bool gaining = invertGain ? diff < 0 : diff > 0;
-        var color = gaining
-            ? new SKColor(0x66, 0xBB, 0x6A, 0x50)  // green translucent
-            : new SKColor(0xEF, 0x53, 0x50, 0x50);  // red translucent
 
         float startAngle = diff > 0 ? yesterdayDeg : todayDeg;
         float sweepAngle = Math.Abs(diff);
 
-        var rect = new SKRect(cx - R, cy - R, cx + R, cy + R);
-        using var paint = new SKPaint
+        // ── Annular sector path ──────────────────────────────
+        float innerR   = R * 0.88f;
+        var outerRect  = new SKRect(cx - R,      cy - R,      cx + R,      cy + R);
+        var innerRect  = new SKRect(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
+
+        using var arcPath = new SKPath();
+        arcPath.AddArc(outerRect, startAngle, sweepAngle);                           // outer arc CW
+        arcPath.ArcTo(innerRect, startAngle + sweepAngle, -sweepAngle, false);       // radial line + inner arc CCW
+        arcPath.Close();                                                             // closing radial line
+
+        // ── Base fill ────────────────────────────────────────
+        var baseColor = gaining
+            ? new SKColor(0x66, 0xBB, 0x6A, 0x72)
+            : new SKColor(0xEF, 0x53, 0x50, 0x72);
+
+        using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = baseColor };
+        c.DrawPath(arcPath, fillPaint);
+
+        // ── Hatching overlay (clip to sector, then sweep diagonal lines) ──
+        var hatchColor = gaining
+            ? new SKColor(0x66, 0xBB, 0x6A, 0xA8)
+            : new SKColor(0xEF, 0x53, 0x50, 0xA8);
+
+        using var hatchPaint = new SKPaint
         {
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill,
-            Color = color
+            IsAntialias  = true,
+            Style        = SKPaintStyle.Stroke,
+            StrokeWidth  = 1.1f,
+            Color        = hatchColor
         };
-        using var path = new SKPath();
-        path.MoveTo(cx, cy);
-        path.ArcTo(rect, startAngle, sweepAngle, false);
-        path.Close();
-        c.DrawPath(path, paint);
+
+        c.Save();
+        c.ClipPath(arcPath);
+
+        float ext  = R * 1.1f;
+        float step = R * 0.055f;   // perpendicular spacing between lines
+
+        if (gaining)
+        {
+            // "/" lines: left-bottom → right-top  (slope −1 in screen y-down coords)
+            for (float k = -2f * ext; k < 2f * ext; k += step)
+                c.DrawLine(cx - ext, cy + k + ext, cx + ext, cy + k - ext, hatchPaint);
+        }
+        else
+        {
+            // "\" lines: left-top → right-bottom  (slope +1 in screen y-down coords)
+            for (float k = -2f * ext; k < 2f * ext; k += step)
+                c.DrawLine(cx - ext, cy + k - ext, cx + ext, cy + k + ext, hatchPaint);
+        }
+
+        c.Restore();
     }
 
     // ── brand logo badge ────────────────────────────────────

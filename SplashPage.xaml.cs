@@ -34,7 +34,7 @@ public sealed partial class SplashPage : Page
     {
         var canvas = e.Surface.Canvas;
         var info = e.Info;
-        canvas.Clear(new SKColor(0x12, 0x12, 0x20));
+        canvas.Clear(SKColors.Black);
 
         float w = info.Width;
         float h = info.Height;
@@ -48,52 +48,101 @@ public sealed partial class SplashPage : Page
         // Ease-out cubic — slow start, decelerates into final position
         double eased = 1.0 - Math.Pow(1.0 - t, 3);
 
-        // Sun travels from 5 radii below horizon to 2.5 radii above
-        float sunCenterY = horizonY + sunRadius * 5.0f
-                           - (float)(eased * sunRadius * 7.5f);
+        // Sun travels from 7 radii below horizon to 2.5 radii above
+        float sunCenterY = horizonY + sunRadius * 7.0f
+                           - (float)(eased * sunRadius * 9.5f);
 
-        // ── Pre-dawn horizon glow (starts immediately, peaks near sunrise) ──
-        double glowPeak = Math.Clamp(eased * 2.0, 0, 1);   // peaks halfway through rise
-        byte horizonGlowAlpha = (byte)(glowPeak * 160);
-        using var preDawnPaint = new SKPaint
+        // ── Sky gradient — animates through night → twilight → dawn → sunrise ──
+        // Colour keyframes: (eased-value, r, g, b)
+        static SKColor SkyColor(double p, (double at, int r, int g, int b)[] keys)
+        {
+            p = Math.Clamp(p, 0.0, 1.0);
+            for (int i = 1; i < keys.Length; i++)
+            {
+                if (p <= keys[i].at)
+                {
+                    double f = (p - keys[i - 1].at) / (keys[i].at - keys[i - 1].at);
+                    return new SKColor(
+                        (byte)(keys[i - 1].r + f * (keys[i].r - keys[i - 1].r)),
+                        (byte)(keys[i - 1].g + f * (keys[i].g - keys[i - 1].g)),
+                        (byte)(keys[i - 1].b + f * (keys[i].b - keys[i - 1].b)));
+                }
+            }
+            var k = keys[^1];
+            return new SKColor((byte)k.r, (byte)k.g, (byte)k.b);
+        }
+
+        // Zenith: near-black → deep midnight blue → rich sky blue
+        var zenith = SkyColor(eased, new[]
+        {
+            (0.00, 0x06, 0x06, 0x12),
+            (0.30, 0x08, 0x10, 0x38),
+            (0.60, 0x0E, 0x28, 0x62),
+            (1.00, 0x18, 0x4A, 0x90),
+        });
+
+        // Mid-sky: dark navy → deep indigo → blue-violet → steel blue
+        var midSky = SkyColor(eased, new[]
+        {
+            (0.00, 0x0A, 0x0A, 0x1C),
+            (0.25, 0x16, 0x10, 0x44),
+            (0.50, 0x28, 0x20, 0x70),
+            (0.75, 0x36, 0x48, 0x90),
+            (1.00, 0x50, 0x7A, 0xB8),
+        });
+
+        // Near-horizon: dark → deep purple → rose-mauve → warm amber
+        var lowerSky = SkyColor(eased, new[]
+        {
+            (0.00, 0x10, 0x0C, 0x22),
+            (0.20, 0x30, 0x14, 0x50),
+            (0.40, 0x70, 0x28, 0x68),
+            (0.60, 0xB8, 0x50, 0x48),
+            (0.80, 0xF0, 0x90, 0x28),
+            (1.00, 0xFF, 0xC8, 0x60),
+        });
+
+        // Horizon edge: darkest start → warm purple → coral → golden
+        var horizon = SkyColor(eased, new[]
+        {
+            (0.00, 0x12, 0x0A, 0x20),
+            (0.15, 0x3A, 0x16, 0x48),
+            (0.35, 0x88, 0x30, 0x60),
+            (0.55, 0xCC, 0x58, 0x30),
+            (0.75, 0xFF, 0xA0, 0x20),
+            (1.00, 0xFF, 0xD8, 0x70),
+        });
+
+        using var skyPaint = new SKPaint
         {
             IsAntialias = true,
             Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateLinearGradient(
-                new SKPoint(cx, horizonY - sunRadius * 4),
+                new SKPoint(cx, 0),
                 new SKPoint(cx, horizonY),
-                new SKColor[]
-                {
-                    new(0x12, 0x12, 0x20, 0),
-                    new(0xFF, 0x80, 0x20, (byte)(horizonGlowAlpha * 0.4f)),
-                    new(0xFF, 0xA0, 0x30, horizonGlowAlpha),
-                },
-                new float[] { 0f, 0.6f, 1f },
+                new[] { zenith, midSky, lowerSky, horizon },
+                new[] { 0f, 0.40f, 0.75f, 1.0f },
                 SKShaderTileMode.Clamp)
         };
-        canvas.DrawRect(0, 0, w, horizonY, preDawnPaint);
+        canvas.DrawRect(0, 0, w, horizonY, skyPaint);
 
-        // ── Sky brightens as sun clears horizon ──
-        double skyFraction = Math.Clamp((eased - 0.4) / 0.6, 0, 1);
-        if (skyFraction > 0)
+        // Ground below horizon stays very dark, warms very slightly
+        var groundTop = SkyColor(eased, new[]
         {
-            byte skyAlpha = (byte)(skyFraction * 130);
-            using var skyPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Fill,
-                Shader = SKShader.CreateLinearGradient(
-                    new SKPoint(cx, 0),
-                    new SKPoint(cx, horizonY),
-                    new SKColor[]
-                    {
-                        new(0x1A, 0x38, 0x6E, skyAlpha),
-                        new(0xFF, 0x90, 0x40, skyAlpha),
-                    },
-                    null, SKShaderTileMode.Clamp)
-            };
-            canvas.DrawRect(0, 0, w, horizonY, skyPaint);
-        }
+            (0.00, 0x08, 0x08, 0x10),
+            (1.00, 0x18, 0x12, 0x14),
+        });
+        using var groundPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Shader = SKShader.CreateLinearGradient(
+                new SKPoint(cx, horizonY),
+                new SKPoint(cx, h),
+                new[] { groundTop, new SKColor(0x04, 0x04, 0x08) },
+                null, SKShaderTileMode.Clamp)
+        };
+        canvas.DrawRect(0, horizonY, w, h, groundPaint);
 
         // ── Clip everything sun-related to above the horizon ──
         canvas.Save();
