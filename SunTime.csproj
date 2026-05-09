@@ -14,6 +14,19 @@
     <UnoFeatures>
       SkiaRenderer;
     </UnoFeatures>
+
+
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <Assets Remove="Assets/pilot_watch.jpg" />
+    <Assets Remove="Assets/black-cat-with-white-background-black-silhouette_1284217-112.jpg" />
+    <None Remove="Assets/pilot_watch.jpg" />
+    <None Remove="Assets/black-cat-with-white-background-black-silhouette_1284217-112.jpg" />
+    <AndroidResource Remove="Assets/pilot_watch.jpg" />
+    <AndroidResource Remove="Assets/black-cat-with-white-background-black-silhouette_1284217-112.jpg" />
+    <Content Remove="Assets/pilot_watch.jpg" />
+    <Content Remove="Assets/black-cat-with-white-background-black-silhouette_1284217-112.jpg" />
+  </ItemGroup>
 
 </Project>

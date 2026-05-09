@@ -1,1 +1,5 @@
-{}
+{
+	"terminal.integrated.env.osx": {
+		"ANDROID_SERIAL": "REPLACE_WITH_ADB_SERIAL"
+	}
+}

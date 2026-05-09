@@ -16,30 +16,16 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel HorizontalAlignment="Center"
                 MaxWidth="480"
-                Margin="16,24,16,32"
+                Margin="16,16,16,32"
                 Spacing="12">
 
-      <!-- Back button + title -->
-      <Grid Margin="0,0,0,8">
-        <Button x:Name="BackButton"
-                Background="#22FFFFFF"
-                BorderThickness="0"
-                CornerRadius="20"
-                Padding="12,6"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Click="BackButton_Click">
-          <TextBlock Text="← Back"
-                     Foreground="#DDDDDD"
-                     FontSize="14" />
-        </Button>
-        <TextBlock Text="Settings"
-                   Foreground="#EEEEEE"
-                   FontSize="17"
-                   FontWeight="SemiBold"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
-      </Grid>
+      <!-- Title — back is handled by Android gesture/system back -->
+      <TextBlock Text="Settings"
+                 Foreground="#EEEEEE"
+                 FontSize="17"
+                 FontWeight="SemiBold"
+                 HorizontalAlignment="Center"
+                 Margin="0,0,0,8" />
 
       <!-- Card -->
       <Border Background="#1C1C2E"
@@ -115,7 +101,7 @@
             <ToggleSwitch x:Name="ShowDurationsToggle"
                           Grid.Column="1"
                           OnContent="" OffContent=""
-                          IsOn="True"
+                          IsOn="False"
                           VerticalAlignment="Center"
                           Toggled="ShowDurationsToggle_Toggled" />
           </Grid>
@@ -140,7 +126,7 @@
             <ToggleSwitch x:Name="ShowApexTimeToggle"
                           Grid.Column="1"
                           OnContent="" OffContent=""
-                          IsOn="True"
+                          IsOn="False"
                           VerticalAlignment="Center"
                           Toggled="ShowApexTimeToggle_Toggled" />
           </Grid>
@@ -157,7 +143,7 @@
               <TextBlock Text="Week diffs"
                          Foreground="#EEEEEE"
                          FontSize="14" />
-              <TextBlock Text="Arc sectors and ±m/wk shift since yesterday."
+              <TextBlock Text="Hatched arc sectors and weekly ±min gain/loss on rise and set."
                          Foreground="#777788"
                          FontSize="12"
                          TextWrapping="Wrap" />
@@ -165,7 +151,7 @@
             <ToggleSwitch x:Name="ShowWeekDiffsToggle"
                           Grid.Column="1"
                           OnContent="" OffContent=""
-                          IsOn="True"
+                          IsOn="False"
                           VerticalAlignment="Center"
                           Toggled="ShowWeekDiffsToggle_Toggled" />
           </Grid>
@@ -190,7 +176,7 @@
             <ToggleSwitch x:Name="ShowSunAngleToggle"
                           Grid.Column="1"
                           OnContent="" OffContent=""
-                          IsOn="True"
+                          IsOn="False"
                           VerticalAlignment="Center"
                           Toggled="ShowSunAngleToggle_Toggled" />
           </Grid>

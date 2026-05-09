@@ -16,8 +16,7 @@ public class MainActivity : Microsoft.UI.Xaml.ApplicationActivity
 [global::Android.App.ApplicationAttribute(
     Label = "@string/ApplicationName",
     Icon = "@mipmap/iconapp",
-    Theme = "@style/AppTheme",
-    Debuggable = false
+    Theme = "@style/AppTheme"
 )]
 public class App : Microsoft.UI.Xaml.NativeApplication
 {
