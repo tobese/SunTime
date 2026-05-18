@@ -9,11 +9,51 @@ namespace SunTime.Controls;
 public class SunDial : SKXamlCanvas
 {
     private enum MarkerType { Rise, Set, Noon }
-    private SolarCalculator.SunData? _sun;
-    private SolarCalculator.SunData? _lastWeekSun;
+    private SolarCalculator.SunData?  _sun;
+    private SolarCalculator.SunData?  _lastWeekSun;
+    private MoonCalculator.MoonData?  _moonData;
+    private SeasonCalculator.SeasonData[]? _seasonData;
     private DateTime _localNow;
     private DateTime _animatedLocalNow;
     private readonly DispatcherTimer _animTimer;
+
+    // ── Colour palette ───────────────────────────────────────
+
+    private static class Palette
+    {
+        // Season ring
+        internal static readonly SKColor SeasonSummer  = new(0xF0, 0xC0, 0x40, 0x6C);
+        internal static readonly SKColor SeasonOverlap = new(0x38, 0x8E, 0x3C, 0xC8);
+        internal static readonly SKColor SeasonSpring  = new(0x60, 0xBB, 0x6A, 0xC8);
+        internal static readonly SKColor SeasonAutumn  = new(0xE0, 0x90, 0x20, 0xC8);
+        internal static readonly SKColor SeasonWinter  = new(0x60, 0x90, 0xD0, 0xD8);
+
+        // Event markers
+        internal static readonly SKColor Sunrise       = new(0xFF, 0xA5, 0x00);
+        internal static readonly SKColor Sunset        = new(0xFF, 0x63, 0x47);
+        internal static readonly SKColor Noon          = new(0xFF, 0xD7, 0x00);
+
+        // Day / night labels and diff arcs
+        internal static readonly SKColor DayGreen      = new(0x66, 0xBB, 0x6A);
+        internal static readonly SKColor NightRed      = new(0xEF, 0x53, 0x50);
+
+        // Moon
+        internal static readonly SKColor MoonLit       = new(0xE8, 0xE0, 0xC8);
+        internal static readonly SKColor MoonDark      = new(0x1A, 0x1A, 0x2E);
+        internal static readonly SKColor MoonRim       = new(0xC0, 0xB8, 0x90, 0x80);
+
+        // Sun disc gradient stops
+        internal static readonly SKColor SunHighlight  = new(0xFF, 0xF1, 0x76);
+
+        // Day / night arc fill (gradient stops)
+        internal static readonly SKColor DayArcInner   = new(0x4A, 0x90, 0xD9);
+        internal static readonly SKColor DayArcOuter   = new(0x87, 0xCE, 0xEB);
+        internal static readonly SKColor NightArcInner = new(0x1A, 0x23, 0x4D);
+        internal static readonly SKColor NightArcOuter = new(0x0D, 0x11, 0x2B);
+
+        // Canvas background (no-sky mode)
+        internal static readonly SKColor Background    = new(0x12, 0x12, 0x20);
+    }
 
     /// <summary>Location string drawn in the bottom strap (e.g. "59.33°N 18.07°E").</summary>
     public string LocationLabel { get; set; } = "";
@@ -43,11 +83,16 @@ public class SunDial : SKXamlCanvas
         _animTimer.Start();
     }
 
-    public void Update(SolarCalculator.SunData sun, DateTime localNow, SolarCalculator.SunData? lastWeekSun = null)
+    public void Update(SolarCalculator.SunData sun, DateTime localNow,
+                       SolarCalculator.SunData? lastWeekSun = null,
+                       MoonCalculator.MoonData? moon = null,
+                       SeasonCalculator.SeasonData[]? seasons = null)
     {
         _sun = sun;
         _localNow = localNow;
         _lastWeekSun = lastWeekSun;
+        _moonData = moon;
+        _seasonData = seasons;
         // Seed animated time on first call to avoid lerp from epoch
         if (_animatedLocalNow == default) _animatedLocalNow = localNow;
     }
@@ -67,15 +112,16 @@ public class SunDial : SKXamlCanvas
     private void OnPaint(object? sender, SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
-        canvas.Clear(new SKColor(0x12, 0x12, 0x20)); // dark background
-
-        if (_sun is null) return;
 
         var info = e.Info;
         float size = Math.Min(info.Width, info.Height);
         float cx = info.Width / 2f;
         float cy = info.Height * 0.45f;
         float R = size * 0.34f;
+
+        DrawBackground(canvas, info.Width, info.Height, cy, _sun?.Altitude ?? -90.0);
+
+        if (_sun is null) return;
 
         // Straps are drawn first (unrotated, behind everything).
         DrawStraps(canvas, cx, cy, R, info.Height);
@@ -107,7 +153,9 @@ public class SunDial : SKXamlCanvas
         if (SettingsService.ShowDurations)
             DrawDurationLabels(canvas, cx, cy, R, _sun);
         DrawEventArcDots(canvas, cx, cy, R);   // only dots/sectors — rotate with dial
+        DrawSeasonRing(canvas, cx, cy, R);
         DrawSun(canvas, cx, cy, R);
+        DrawMoon(canvas, cx, cy, R);
 
         canvas.Restore();
 
@@ -118,6 +166,67 @@ public class SunDial : SKXamlCanvas
         DrawLocationLabel(canvas, cx, cy, R);
         DrawBrandLogo(canvas, cx, cy, R);
     }
+
+    // ── full-canvas sky background ───────────────────────────
+
+    private static void DrawBackground(SKCanvas c, float w, float h, float cy, double altitude)
+    {
+        if (!SettingsService.ShowSkyBackground)
+        {
+            c.Clear(Palette.Background);
+            return;
+        }
+
+        var (zenith, horizon, ground) = LerpSkyPalette(altitude);
+
+        using var shader = SKShader.CreateLinearGradient(
+            new SKPoint(0, 0), new SKPoint(0, h),
+            new[] { zenith, horizon, ground },
+            new[] { 0f, cy / h, 1f },
+            SKShaderTileMode.Clamp);
+
+        using var paint = new SKPaint { Shader = shader };
+        c.DrawRect(0, 0, w, h, paint);
+    }
+
+    private static (SKColor zenith, SKColor horizon, SKColor ground) LerpSkyPalette(double altitude)
+    {
+        // Keyframes: (altitude °, zenith, horizon, ground)
+        (double alt, SKColor zenith, SKColor horizon, SKColor ground)[] keys =
+        [
+            (-18, new SKColor(0x06, 0x06, 0x10), new SKColor(0x08, 0x08, 0x18), new SKColor(0x05, 0x05, 0x10)),
+            ( -6, new SKColor(0x0D, 0x10, 0x35), new SKColor(0x18, 0x15, 0x4A), new SKColor(0x0A, 0x0B, 0x20)),
+            (  0, new SKColor(0x1A, 0x20, 0x50), new SKColor(0xE8, 0x60, 0x2A), new SKColor(0x14, 0x12, 0x1E)),
+            (  5, new SKColor(0x1E, 0x3A, 0x6E), new SKColor(0xFF, 0xA0, 0x40), new SKColor(0x16, 0x18, 0x25)),
+            ( 15, new SKColor(0x2A, 0x5F, 0x9E), new SKColor(0x7B, 0xB8, 0xD4), new SKColor(0x1A, 0x20, 0x35)),
+            ( 45, new SKColor(0x4A, 0x90, 0xD9), new SKColor(0x87, 0xCE, 0xEB), new SKColor(0x1E, 0x28, 0x40)),
+        ];
+
+        if (altitude <= keys[0].alt)
+            return (keys[0].zenith, keys[0].horizon, keys[0].ground);
+        if (altitude >= keys[^1].alt)
+            return (keys[^1].zenith, keys[^1].horizon, keys[^1].ground);
+
+        for (int i = 0; i < keys.Length - 1; i++)
+        {
+            if (altitude <= keys[i + 1].alt)
+            {
+                double t = (altitude - keys[i].alt) / (keys[i + 1].alt - keys[i].alt);
+                return (
+                    LerpColor(keys[i].zenith,  keys[i + 1].zenith,  t),
+                    LerpColor(keys[i].horizon, keys[i + 1].horizon, t),
+                    LerpColor(keys[i].ground,  keys[i + 1].ground,  t));
+            }
+        }
+
+        return (keys[^1].zenith, keys[^1].horizon, keys[^1].ground);
+    }
+
+    private static SKColor LerpColor(SKColor a, SKColor b, double t) =>
+        new((byte)(a.Red   + (b.Red   - a.Red)   * t),
+            (byte)(a.Green + (b.Green - a.Green)  * t),
+            (byte)(a.Blue  + (b.Blue  - a.Blue)   * t),
+            (byte)(a.Alpha + (b.Alpha - a.Alpha)  * t));
 
     // ── sky / ground arc ────────────────────────────────────
 
@@ -139,7 +248,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateRadialGradient(
                 new SKPoint(cx, cy), r,
-                new[] { new SKColor(0x4A, 0x90, 0xD9), new SKColor(0x87, 0xCE, 0xEB) },
+                new[] { Palette.DayArcInner, Palette.DayArcOuter },
                 null, SKShaderTileMode.Clamp)
         };
         using var skyPath = new SKPath();
@@ -155,7 +264,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateRadialGradient(
                 new SKPoint(cx, cy), r,
-                new[] { new SKColor(0x1A, 0x23, 0x4D), new SKColor(0x0D, 0x11, 0x2B) },
+                new[] { Palette.NightArcInner, Palette.NightArcOuter },
                 null, SKShaderTileMode.Clamp)
         };
         using var groundPath = new SKPath();
@@ -574,7 +683,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 3f,
             StrokeCap = SKStrokeCap.Round,
-            Color = new SKColor(0xFF, 0xD7, 0x00)
+            Color = Palette.Noon
         };
         float hLen = r * 0.55f;
         c.DrawLine(cx, cy,
@@ -592,7 +701,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1f,
             StrokeCap = SKStrokeCap.Round,
-            Color = new SKColor(0xEF, 0x53, 0x50, 0xCC) // soft red
+            Color = Palette.NightRed.WithAlpha(0xCC)
         };
         float sLen = r * 0.80f;
         c.DrawLine(cx, cy,
@@ -620,12 +729,12 @@ public class SunDial : SKXamlCanvas
         using var dayPaint = new SKPaint
         {
             IsAntialias = true,
-            Color = new SKColor(0x66, 0xBB, 0x6A)
+            Color = Palette.DayGreen
         };
         using var nightPaint = new SKPaint
         {
             IsAntialias = true,
-            Color = new SKColor(0xEF, 0x53, 0x50)
+            Color = Palette.NightRed
         };
 
         c.DrawText(dayText, cx, cy - R * 0.22f, SKTextAlign.Center, font, dayPaint);
@@ -646,12 +755,12 @@ public class SunDial : SKXamlCanvas
         }
 
         // Rise dot
-        DrawArcDot(c, cx, cy, R, _sun.Sunrise, new SKColor(0xFF, 0xA5, 0x00));
+        DrawArcDot(c, cx, cy, R, _sun.Sunrise, Palette.Sunrise);
         // Set dot
-        DrawArcDot(c, cx, cy, R, _sun.Sunset, new SKColor(0xFF, 0x63, 0x47));
+        DrawArcDot(c, cx, cy, R, _sun.Sunset, Palette.Sunset);
         // Noon dot (always shown; suppressed only when NoonAtTop)
         if (!SettingsService.NoonAtTop)
-            DrawArcDot(c, cx, cy, R, _sun.SolarNoon, new SKColor(0xFF, 0xD7, 0x00));
+            DrawArcDot(c, cx, cy, R, _sun.SolarNoon, Palette.Noon);
     }
 
     private static void DrawArcDot(SKCanvas c, float cx, float cy, float R,
@@ -679,9 +788,9 @@ public class SunDial : SKXamlCanvas
         double? visibleSetDelta = SettingsService.ShowWeekDiffs ? setDelta : null;
 
         DrawRiseSetField(c, cx, cy, R, _sun.Sunrise, MarkerType.Rise,
-                         new SKColor(0xFF, 0xA5, 0x00), visibleRiseDelta, invertDelta: true);
+                         Palette.Sunrise, visibleRiseDelta, invertDelta: true);
         DrawRiseSetField(c, cx, cy, R, _sun.Sunset, MarkerType.Set,
-                         new SKColor(0xFF, 0x63, 0x47), visibleSetDelta, invertDelta: false);
+                         Palette.Sunset, visibleSetDelta, invertDelta: false);
     }
 
     /// <summary>Fixed noon time label — drawn outside rotation, always upright.</summary>
@@ -689,11 +798,10 @@ public class SunDial : SKXamlCanvas
     {
         if (_sun is null || SettingsService.NoonAtTop || !SettingsService.ShowApexTime) return;
 
-        var color = new SKColor(0xFF, 0xD7, 0x00);
         float fontSize = R * 0.085f;
         float rowY = cy - R * 0.65f;
         using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
-        using var paint = new SKPaint { IsAntialias = true, Color = color };
+        using var paint = new SKPaint { IsAntialias = true, Color = Palette.Noon };
         c.DrawText($"{_sun.SolarNoon:HH:mm}", cx, rowY + fontSize * 0.35f,
                    SKTextAlign.Center, font, paint);
     }
@@ -782,9 +890,7 @@ public class SunDial : SKXamlCanvas
             double displayDelta = invertDelta ? -deltaMinutes!.Value : deltaMinutes!.Value;
             int weeklyDelta = (int)Math.Round(displayDelta);
             string deltaStr = weeklyDelta > 0 ? $"+{weeklyDelta}" : $"{weeklyDelta}";
-            var deltaColor = weeklyDelta > 0
-                ? new SKColor(0x66, 0xBB, 0x6A)
-                : new SKColor(0xEF, 0x53, 0x50);
+            var deltaColor = weeklyDelta > 0 ? Palette.DayGreen : Palette.NightRed;
             using var deltaFont = new SKFont(SKTypeface.FromFamilyName("Arial"), deltaFontSize);
             using var deltaPaint = new SKPaint { IsAntialias = true, Color = deltaColor };
             c.DrawText(deltaStr, fieldCx, timeY + lineGap + deltaFontSize * 0.78f,
@@ -921,7 +1027,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateRadialGradient(
                 new SKPoint(sx, sy), sunRadius * 3,
-                new[] { new SKColor(0xFF, 0xD7, 0x00, (byte)(alpha / 3)), SKColors.Transparent },
+                new[] { Palette.Noon.WithAlpha((byte)(alpha / 3)), SKColors.Transparent },
                 null, SKShaderTileMode.Clamp)
         };
         c.DrawCircle(sx, sy, sunRadius * 3, glowPaint);
@@ -933,7 +1039,7 @@ public class SunDial : SKXamlCanvas
             Style = SKPaintStyle.Fill,
             Shader = SKShader.CreateRadialGradient(
                 new SKPoint(sx - sunRadius * 0.3f, sy - sunRadius * 0.3f), sunRadius,
-                new[] { new SKColor(0xFF, 0xF1, 0x76, alpha), new SKColor(0xFF, 0xA5, 0x00, alpha) },
+                new[] { Palette.SunHighlight.WithAlpha(alpha), Palette.Sunrise.WithAlpha(alpha) },
                 null, SKShaderTileMode.Clamp)
         };
         c.DrawCircle(sx, sy, sunRadius, sunPaint);
@@ -953,6 +1059,159 @@ public class SunDial : SKXamlCanvas
             float ay = cy - altR * sin + altFont.Size * 0.35f;
             c.DrawText(altText, ax, ay, SKTextAlign.Center, altFont, altPaint);
         }
+    }
+
+    // ── season ring ──────────────────────────────────────────
+
+    private void DrawSeasonRing(SKCanvas c, float cx, float cy, float R)
+    {
+        if (_seasonData is null || !SettingsService.ShowSeasonRing) return;
+
+        // seasonData order: [spring, summer, autumn, winter]
+        var spring = _seasonData[0];
+        var summer = _seasonData[1];
+        var autumn = _seasonData[2];
+        var winter = _seasonData[3];
+
+        float ringR   = R * 0.994f;
+        var   rect    = new SKRect(cx - ringR, cy - ringR, cx + ringR, cy + ringR);
+        float strokeW = R * 0.018f;
+
+        // All angle arithmetic is done in linear space relative to the summer rise angle
+        // so intersection and difference calculations are simple subtraction / max / min.
+        float sumRise  = HourToSkiaDeg(summer.Sunrise);
+        float sumSweep = SeasonSweep(summer);
+
+        float Rel(DateTime t) => ((HourToSkiaDeg(t) - sumRise) + 360f) % 360f;
+
+        float spaStart = Rel(spring.Sunrise); float spaEnd = spaStart + SeasonSweep(spring);
+        float autStart = Rel(autumn.Sunrise); float autEnd = autStart + SeasonSweep(autumn);
+        float winStart = Rel(winter.Sunrise); float winSweep = SeasonSweep(winter);
+
+        // Intersection of spring and autumn arcs.
+        float iStart = Math.Max(spaStart, autStart);
+        float iEnd   = Math.Min(spaEnd,   autEnd);
+
+        void Arc(float relStart, float sweep, SKColor color)
+        {
+            if (sweep < 0.3f) return;
+            float start = (sumRise + relStart) % 360f;
+            using var p = new SKPaint
+            {
+                IsAntialias = true, Style = SKPaintStyle.Stroke,
+                StrokeWidth = strokeW, StrokeCap = SKStrokeCap.Butt, Color = color,
+            };
+            c.DrawArc(rect, start, sweep, false, p);
+        }
+
+        // 1. Summer base (gold) — the full solstice daylight window
+        Arc(0, sumSweep, Palette.SeasonSummer);
+
+        // 2. Spring ∩ Autumn — darker green where both equinoxes overlap
+        if (iEnd > iStart)
+            Arc(iStart, iEnd - iStart, Palette.SeasonOverlap);
+
+        // 3. Only spring — green beyond the intersection
+        Arc(spaStart, Math.Max(0, iStart - spaStart), Palette.SeasonSpring);
+        Arc(iEnd,     Math.Max(0, spaEnd   - iEnd),   Palette.SeasonSpring);
+
+        // 4. Only autumn — amber beyond the intersection
+        Arc(autStart, Math.Max(0, iStart - autStart), Palette.SeasonAutumn);
+        Arc(iEnd,     Math.Max(0, autEnd   - iEnd),   Palette.SeasonAutumn);
+
+        // 5. Winter — blue imposed on top of everything
+        Arc(winStart, winSweep, Palette.SeasonWinter);
+    }
+
+    private static float SeasonSweep(SeasonCalculator.SeasonData s) =>
+        ((HourToSkiaDeg(s.Sunset) - HourToSkiaDeg(s.Sunrise)) + 360f) % 360f;
+
+    // ── moon icon ────────────────────────────────────────────
+
+    private void DrawMoon(SKCanvas c, float cx, float cy, float R)
+    {
+        if (_moonData is null || !SettingsService.ShowMoon) return;
+
+        // Skip when moon and sun overlap (new-moon region, within ~15 min on the ring).
+        double moonHour = _moonData.HourOnDial;
+        double sunHour  = _animatedLocalNow.TimeOfDay.TotalHours;
+        double diff     = Math.Abs(moonHour - sunHour);
+        if (diff > 12) diff = 24 - diff;
+        if (diff < 0.25) return;
+
+        double angle = HourToAngle(moonHour);
+        float mx = cx + R * (float)Math.Cos(angle);
+        float my = cy - R * (float)Math.Sin(angle);
+
+        float moonRadius = R * 0.055f;
+        double fraction  = _moonData.PhaseFraction;
+
+        // termX: signed x-offset that controls the terminator ellipse width.
+        // +moonR → new moon (dark covers lit half); −moonR → full moon (lit covers dark half).
+        float termX = moonRadius * (float)Math.Cos(fraction * 2.0 * Math.PI);
+        bool waxing = fraction < 0.5;
+
+        var litColor  = Palette.MoonLit;
+        var darkColor = Palette.MoonDark;
+        var rimColor  = Palette.MoonRim;
+
+        var discRect = new SKRect(mx - moonRadius, my - moonRadius, mx + moonRadius, my + moonRadius);
+
+        // Clip all fills to the moon disc.
+        c.Save();
+        using var discClip = new SKPath();
+        discClip.AddCircle(mx, my, moonRadius);
+        c.ClipPath(discClip);
+
+        // 1. Dark base.
+        using var darkPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = darkColor };
+        c.DrawCircle(mx, my, moonRadius, darkPaint);
+
+        // 2. Lit semicircle: right for waxing, left for waning.
+        using var litPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = litColor };
+        using var halfPath = new SKPath();
+        if (waxing)
+        {
+            halfPath.MoveTo(mx, my);
+            halfPath.LineTo(mx, my - moonRadius);
+            halfPath.ArcTo(discRect, 270f, 180f, false); // top → right → bottom
+            halfPath.Close();
+        }
+        else
+        {
+            halfPath.MoveTo(mx, my);
+            halfPath.LineTo(mx, my + moonRadius);
+            halfPath.ArcTo(discRect, 90f, 180f, false);  // bottom → left → top
+            halfPath.Close();
+        }
+        c.DrawPath(halfPath, litPaint);
+
+        // 3. Terminator ellipse — transitions between crescent and gibbous.
+        if (Math.Abs(termX) > 0.5f)
+        {
+            float ellipseW = Math.Abs(termX);
+            // Waxing: positive termX → dark on right (crescent); negative → lit on left (gibbous).
+            // Waning: negative termX → lit on right (gibbous);  positive → dark on left (crescent).
+            SKColor ellipseColor = waxing
+                ? (termX > 0 ? darkColor : litColor)
+                : (termX < 0 ? litColor  : darkColor);
+
+            var ellipseRect = new SKRect(mx - ellipseW, my - moonRadius, mx + ellipseW, my + moonRadius);
+            using var ellipsePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = ellipseColor };
+            c.DrawOval(ellipseRect, ellipsePaint);
+        }
+
+        c.Restore();
+
+        // 4. Rim stroke (outside clip so it's never clipped away).
+        using var rimPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style       = SKPaintStyle.Stroke,
+            StrokeWidth = 0.8f,
+            Color       = rimColor,
+        };
+        c.DrawCircle(mx, my, moonRadius, rimPaint);
     }
 
     /// <summary>
@@ -990,16 +1249,16 @@ public class SunDial : SKXamlCanvas
 
         // ── Base fill ────────────────────────────────────────
         var baseColor = gaining
-            ? new SKColor(0x66, 0xBB, 0x6A, 0x72)
-            : new SKColor(0xEF, 0x53, 0x50, 0x72);
+            ? Palette.DayGreen.WithAlpha(0x72)
+            : Palette.NightRed.WithAlpha(0x72);
 
         using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = baseColor };
         c.DrawPath(arcPath, fillPaint);
 
         // ── Hatching overlay (clip to sector, then sweep diagonal lines) ──
         var hatchColor = gaining
-            ? new SKColor(0x66, 0xBB, 0x6A, 0xA8)
-            : new SKColor(0xEF, 0x53, 0x50, 0xA8);
+            ? Palette.DayGreen.WithAlpha(0xA8)
+            : Palette.NightRed.WithAlpha(0xA8);
 
         using var hatchPaint = new SKPaint
         {

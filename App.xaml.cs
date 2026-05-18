@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using Windows.UI.Core;
 
 namespace SunTime;
 
@@ -31,6 +32,21 @@ public partial class App : Application
         {
             rootFrame.Navigate(typeof(SplashPage), args.Arguments);
         }
+
+        // Handle browser back button (WASM) and hardware back (Android) at the app level.
+        // AppViewBackButtonVisibility = Visible (set when entering Settings) pushes a browser
+        // history entry via history.pushState, which makes BackRequested fire on browser back.
+        var navMgr = SystemNavigationManager.GetForCurrentView();
+        navMgr.BackRequested += (_, e) =>
+        {
+            if (rootFrame.BackStack.Count > 0)
+            {
+                e.Handled = true;
+                rootFrame.GoBack();
+                if (rootFrame.BackStack.Count == 0)
+                    navMgr.AppViewBackButtonVisibility = AppViewBackButtonVisibility.Collapsed;
+            }
+        };
 
         MainWindow.Activate();
     }
