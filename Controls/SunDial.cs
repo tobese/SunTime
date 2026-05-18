@@ -823,7 +823,7 @@ public class SunDial : SKXamlCanvas
         float lineGap = R * 0.018f;
         float corner = R * 0.028f;
 
-        float boxH = padY * 2 + fontSize + (hasDelta ? lineGap + deltaFontSize : 0f);
+        float boxH = padY * 2 + (hasDelta ? fontSize * 0.78f + lineGap + deltaFontSize : fontSize);
         float boxW = R * 0.26f;
 
         // Fixed row at the "12" label height (nr = R*0.58*1.12 = R*0.65 above centre)
@@ -875,11 +875,8 @@ public class SunDial : SKXamlCanvas
         c.DrawLine(rect.Left + corner, rect.Bottom, rect.Right - corner, rect.Bottom, shPaint);
         c.DrawLine(rect.Right, rect.Top + corner, rect.Right, rect.Bottom - corner, shPaint);
 
-        // ── Time text — vertically centred in box ────────────
-        float boxCy = rowY;
-        float timeY = hasDelta
-            ? boxTop + padY + fontSize * 0.78f          // nudge up when delta row below
-            : boxCy + fontSize * 0.35f;                 // true vertical centre
+        // ── Time text ────────────────────────────────────────
+        float timeY = boxTop + padY + fontSize * 0.78f;
         using var timeFont = new SKFont(SKTypeface.FromFamilyName("Arial"), fontSize);
         using var timePaint = new SKPaint { IsAntialias = true, Color = color };
         c.DrawText($"{time:HH:mm}", fieldCx, timeY, SKTextAlign.Center, timeFont, timePaint);
@@ -1044,7 +1041,7 @@ public class SunDial : SKXamlCanvas
         };
         c.DrawCircle(sx, sy, sunRadius, sunPaint);
 
-        // Altitude label — placed just inside the sun along the same radius, upright.
+        // Altitude label — placed just inside the sun, rotated along the radius.
         if (SettingsService.ShowSunAngle)
         {
             using var altFont = new SKFont(SKTypeface.FromFamilyName("Arial"), R * 0.08f);
@@ -1056,8 +1053,17 @@ public class SunDial : SKXamlCanvas
             float altR = R * 0.88f;
             string altText = $"{_sun.Altitude:F1}°";
             float ax = cx + altR * cos;
-            float ay = cy - altR * sin + altFont.Size * 0.35f;
-            c.DrawText(altText, ax, ay, SKTextAlign.Center, altFont, altPaint);
+            float ay = cy - altR * sin;
+
+            // Rotate so text lies radially (perpendicular to the clock arc).
+            float rotateDeg = -(float)(a * 180.0 / Math.PI) + 90f;
+            if (cos < 0) rotateDeg += 180f;   // flip on left half so text stays readable
+
+            c.Save();
+            c.Translate(ax, ay);
+            c.RotateDegrees(rotateDeg);
+            c.DrawText(altText, 0, altFont.Size * 0.35f, SKTextAlign.Center, altFont, altPaint);
+            c.Restore();
         }
     }
 
@@ -1214,12 +1220,6 @@ public class SunDial : SKXamlCanvas
         c.DrawCircle(mx, my, moonRadius, rimPaint);
     }
 
-    /// <summary>
-    /// Annular arc band between R*0.88 and R showing the angular shift between
-    /// yesterday's and today's event time. Filled with a translucent base colour
-    /// plus a diagonal hatching overlay for colorblind accessibility:
-    /// gaining daylight → "/" lines (+45°), losing → "\" lines (−45°).
-    /// </summary>
     private static void DrawDiffArc(SKCanvas c, float cx, float cy, float R,
                                      DateTime yesterdayTime, DateTime todayTime,
                                      bool invertGain)
@@ -1237,57 +1237,17 @@ public class SunDial : SKXamlCanvas
         float startAngle = diff > 0 ? yesterdayDeg : todayDeg;
         float sweepAngle = Math.Abs(diff);
 
-        // ── Annular sector path ──────────────────────────────
-        float innerR   = R * 0.88f;
-        var outerRect  = new SKRect(cx - R,      cy - R,      cx + R,      cy + R);
-        var innerRect  = new SKRect(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
+        // Pie sector from clock centre to ring — one radial edge at yesterday's position,
+        // the other at today's, arc at R.
+        var outerRect = new SKRect(cx - R, cy - R, cx + R, cy + R);
+        using var path = new SKPath();
+        path.MoveTo(cx, cy);
+        path.ArcTo(outerRect, startAngle, sweepAngle, false);
+        path.Close();
 
-        using var arcPath = new SKPath();
-        arcPath.AddArc(outerRect, startAngle, sweepAngle);                           // outer arc CW
-        arcPath.ArcTo(innerRect, startAngle + sweepAngle, -sweepAngle, false);       // radial line + inner arc CCW
-        arcPath.Close();                                                             // closing radial line
-
-        // ── Base fill ────────────────────────────────────────
-        var baseColor = gaining
-            ? Palette.DayGreen.WithAlpha(0x72)
-            : Palette.NightRed.WithAlpha(0x72);
-
-        using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = baseColor };
-        c.DrawPath(arcPath, fillPaint);
-
-        // ── Hatching overlay (clip to sector, then sweep diagonal lines) ──
-        var hatchColor = gaining
-            ? Palette.DayGreen.WithAlpha(0xA8)
-            : Palette.NightRed.WithAlpha(0xA8);
-
-        using var hatchPaint = new SKPaint
-        {
-            IsAntialias  = true,
-            Style        = SKPaintStyle.Stroke,
-            StrokeWidth  = 1.1f,
-            Color        = hatchColor
-        };
-
-        c.Save();
-        c.ClipPath(arcPath);
-
-        float ext  = R * 1.1f;
-        float step = R * 0.055f;   // perpendicular spacing between lines
-
-        if (gaining)
-        {
-            // "/" lines: left-bottom → right-top  (slope −1 in screen y-down coords)
-            for (float k = -2f * ext; k < 2f * ext; k += step)
-                c.DrawLine(cx - ext, cy + k + ext, cx + ext, cy + k - ext, hatchPaint);
-        }
-        else
-        {
-            // "\" lines: left-top → right-bottom  (slope +1 in screen y-down coords)
-            for (float k = -2f * ext; k < 2f * ext; k += step)
-                c.DrawLine(cx - ext, cy + k - ext, cx + ext, cy + k + ext, hatchPaint);
-        }
-
-        c.Restore();
+        var color = gaining ? Palette.DayGreen.WithAlpha(0xA0) : Palette.NightRed.WithAlpha(0xA0);
+        using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = color };
+        c.DrawPath(path, p);
     }
 
     // ── brand logo badge ────────────────────────────────────
