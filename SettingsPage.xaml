@@ -19,15 +19,126 @@
                 Margin="16,16,16,32"
                 Spacing="12">
 
-      <!-- Title — back is handled by Android gesture/system back -->
-      <TextBlock Text="Settings"
-                 Foreground="#EEEEEE"
-                 FontSize="17"
-                 FontWeight="SemiBold"
-                 HorizontalAlignment="Center"
-                 Margin="0,0,0,8" />
+      <!-- Title row — HyperlinkButton has a transparent hit area that works in WASM -->
+      <Grid Margin="0,0,0,8">
+        <HyperlinkButton x:Name="BackButton"
+                         Content="← Back"
+                         HorizontalAlignment="Left"
+                         VerticalAlignment="Center"
+                         Foreground="#EEEEEE"
+                         FontSize="15"
+                         Click="BackButton_Click" />
+        <TextBlock Text="Settings"
+                   Foreground="#EEEEEE"
+                   FontSize="17"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
 
-      <!-- Card -->
+      <!-- ── Appearance card ─────────────────────────────── -->
+      <TextBlock Text="APPEARANCE"
+                 Foreground="#555566"
+                 FontSize="11"
+                 FontWeight="SemiBold"
+                 Margin="4,0,0,0" />
+
+      <Border Background="#1C1C2E"
+              CornerRadius="14"
+              Padding="20,8">
+        <StackPanel Spacing="0">
+
+          <!-- Sky background -->
+          <Grid MinHeight="64">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="Dynamic sky background"
+                         Foreground="#EEEEEE"
+                         FontSize="14" />
+              <TextBlock Text="Background shifts from deep night through twilight to daytime blue."
+                         Foreground="#777788"
+                         FontSize="12"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch x:Name="ShowSkyBackgroundToggle"
+                          Grid.Column="1"
+                          OnContent="" OffContent=""
+                          IsOn="True"
+                          VerticalAlignment="Center"
+                          Toggled="ShowSkyBackgroundToggle_Toggled" />
+          </Grid>
+
+          <Rectangle Height="1" Fill="#2A2A3A" Margin="-20,0"/>
+
+          <!-- Season ring -->
+          <Grid MinHeight="64">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Season ring"
+                           Foreground="#EEEEEE"
+                           FontSize="14"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="ⓘ"
+                           Foreground="#777788"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           ToolTipService.ToolTip="One arc on the inner ring coloured by the daylight window of each solar calendar date at your location. Gold = summer solstice (longest day, widest arc). Blue = winter solstice (shortest day, narrowest, drawn on top). Darker green = where both equinoxes overlap. Spring green = daylight hours unique to the spring equinox. Amber = unique to the autumn equinox. Arc position = time of day; arc width = day length." />
+              </StackPanel>
+              <TextBlock Text="Sunrise-to-sunset arcs for solstices and equinoxes."
+                         Foreground="#777788"
+                         FontSize="12"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch x:Name="ShowSeasonRingToggle"
+                          Grid.Column="1"
+                          OnContent="" OffContent=""
+                          IsOn="True"
+                          VerticalAlignment="Center"
+                          Toggled="ShowSeasonRingToggle_Toggled" />
+          </Grid>
+
+          <Rectangle Height="1" Fill="#2A2A3A" Margin="-20,0"/>
+
+          <!-- Moon -->
+          <Grid MinHeight="64">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="Moon phase"
+                         Foreground="#EEEEEE"
+                         FontSize="14" />
+              <TextBlock Text="Moon icon with current phase rendered on the dial ring."
+                         Foreground="#777788"
+                         FontSize="12"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch x:Name="ShowMoonToggle"
+                          Grid.Column="1"
+                          OnContent="" OffContent=""
+                          IsOn="True"
+                          VerticalAlignment="Center"
+                          Toggled="ShowMoonToggle_Toggled" />
+          </Grid>
+
+        </StackPanel>
+      </Border>
+
+      <!-- ── Clock card ──────────────────────────────────── -->
+      <TextBlock Text="CLOCK"
+                 Foreground="#555566"
+                 FontSize="11"
+                 FontWeight="SemiBold"
+                 Margin="4,4,0,0" />
+
       <Border Background="#1C1C2E"
               CornerRadius="14"
               Padding="20,8">

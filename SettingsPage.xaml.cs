@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using SunTime.Services;
-using Windows.UI.Core;
 
 namespace SunTime;
 
@@ -17,10 +16,6 @@ public sealed partial class SettingsPage : Page
     {
         base.OnNavigatedTo(e);
 
-        // Intercept the system/hardware back button so it navigates within the
-        // Frame instead of exiting the app.
-        SystemNavigationManager.GetForCurrentView().BackRequested += OnSystemBackRequested;
-
         // Sync all toggles to persisted values without triggering their handlers.
         SetToggle(DstToggle,            DstToggle_Toggled,            SettingsService.AdjustApexForDst);
         SetToggle(NoonAtTopToggle,      NoonAtTopToggle_Toggled,      SettingsService.NoonAtTop);
@@ -28,21 +23,19 @@ public sealed partial class SettingsPage : Page
         SetToggle(ShowApexTimeToggle,   ShowApexTimeToggle_Toggled,   SettingsService.ShowApexTime);
         SetToggle(ShowWeekDiffsToggle,  ShowWeekDiffsToggle_Toggled,  SettingsService.ShowWeekDiffs);
         SetToggle(ShowSunAngleToggle,   ShowSunAngleToggle_Toggled,   SettingsService.ShowSunAngle);
+        SetToggle(ShowMoonToggle,           ShowMoonToggle_Toggled,           SettingsService.ShowMoon);
+        SetToggle(ShowSkyBackgroundToggle,  ShowSkyBackgroundToggle_Toggled,  SettingsService.ShowSkyBackground);
+        SetToggle(ShowSeasonRingToggle,     ShowSeasonRingToggle_Toggled,     SettingsService.ShowSeasonRing);
     }
 
-    protected override void OnNavigatedFrom(NavigationEventArgs e)
-    {
-        base.OnNavigatedFrom(e);
-        SystemNavigationManager.GetForCurrentView().BackRequested -= OnSystemBackRequested;
-    }
+    private void BackButton_Click(object sender, RoutedEventArgs e) => GoBack();
 
-    private void OnSystemBackRequested(object? sender, BackRequestedEventArgs e)
+    private void GoBack()
     {
-        if (Frame.CanGoBack)
-        {
-            e.Handled = true;
+        if (Frame.BackStack.Count > 0)
             Frame.GoBack();
-        }
+        else
+            Frame.Navigate(typeof(MainPage));
     }
 
     private static void SetToggle(ToggleSwitch toggle, RoutedEventHandler handler, bool value)
@@ -69,5 +62,14 @@ public sealed partial class SettingsPage : Page
 
     private void ShowSunAngleToggle_Toggled(object sender, RoutedEventArgs e) =>
         SettingsService.ShowSunAngle = ShowSunAngleToggle.IsOn;
+
+    private void ShowMoonToggle_Toggled(object sender, RoutedEventArgs e) =>
+        SettingsService.ShowMoon = ShowMoonToggle.IsOn;
+
+    private void ShowSkyBackgroundToggle_Toggled(object sender, RoutedEventArgs e) =>
+        SettingsService.ShowSkyBackground = ShowSkyBackgroundToggle.IsOn;
+
+    private void ShowSeasonRingToggle_Toggled(object sender, RoutedEventArgs e) =>
+        SettingsService.ShowSeasonRing = ShowSeasonRingToggle.IsOn;
 
 }

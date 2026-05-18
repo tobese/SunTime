@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using SunTime.Services;
+using Windows.UI.Core;
 
 namespace SunTime;
 
@@ -206,6 +207,9 @@ public sealed partial class MainPage : Page
 
     private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
     {
+        // Push a browser history entry so the browser back button fires BackRequested on WASM.
+        SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility =
+            AppViewBackButtonVisibility.Visible;
         Frame.Navigate(typeof(SettingsPage));
     }
 
@@ -244,7 +248,12 @@ public sealed partial class MainPage : Page
         var sun         = SolarCalculator.Calculate(_latitude, _longitude, utcNow,      effectiveOffset);
         var lastWeekSun = SolarCalculator.Calculate(_latitude, _longitude, utcLastWeek, lastWeekOffset);
 
+        double solarNoonHour = sun.SolarNoon.Hour + sun.SolarNoon.Minute / 60.0 + sun.SolarNoon.Second / 3600.0;
+        var moon    = MoonCalculator.Calculate(utcNow, solarNoonHour);
+        var seasons = SeasonCalculator.Compute(utcNow.Year, _latitude, _longitude,
+                          TimeZoneInfo.Local);
+
         var localNow = utcNow + effectiveOffset;
-        Dial.Update(sun, localNow, lastWeekSun);
+        Dial.Update(sun, localNow, lastWeekSun, moon, seasons);
     }
 }
