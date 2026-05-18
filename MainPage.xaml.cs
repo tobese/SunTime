@@ -248,12 +248,14 @@ public sealed partial class MainPage : Page
         var sun         = SolarCalculator.Calculate(_latitude, _longitude, utcNow,      effectiveOffset);
         var lastWeekSun = SolarCalculator.Calculate(_latitude, _longitude, utcLastWeek, lastWeekOffset);
 
-        double solarNoonHour = sun.SolarNoon.Hour + sun.SolarNoon.Minute / 60.0 + sun.SolarNoon.Second / 3600.0;
-        var moon    = MoonCalculator.Calculate(utcNow, solarNoonHour);
-        var seasons = SeasonCalculator.Compute(utcNow.Year, _latitude, _longitude,
-                          TimeZoneInfo.Local);
+        var localNow  = utcNow + effectiveOffset;
+        double localHour = localNow.Hour + localNow.Minute / 60.0 + localNow.Second / 3600.0;
+        var moon = MoonCalculator.Calculate(utcNow, localHour);
 
-        var localNow = utcNow + effectiveOffset;
+        SeasonCalculator.SeasonData[]? seasons = null;
+        try { seasons = SeasonCalculator.Compute(utcNow.Year, _latitude, _longitude, TimeZoneInfo.Local); }
+        catch { /* season ring hidden if timezone data unavailable */ }
+
         Dial.Update(sun, localNow, lastWeekSun, moon, seasons);
     }
 }

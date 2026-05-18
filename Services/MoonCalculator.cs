@@ -14,15 +14,16 @@ public static class MoonCalculator
     private const double NewMoonJd     = 2451550.26;
     private const double SynodicPeriod = 29.530588853; // days
 
-    public static MoonData Calculate(DateTime utcNow, double solarNoonHour)
+    public static MoonData Calculate(DateTime utcNow, double localHour)
     {
         double jd      = ToJulianDay(utcNow);
         double ageDays = ((jd - NewMoonJd) % SynodicPeriod + SynodicPeriod) % SynodicPeriod;
         double fraction    = ageDays / SynodicPeriod;
         double illuminated = (1.0 - Math.Cos(fraction * 2.0 * Math.PI)) / 2.0;
 
-        // Moon lags the sun by one full 24 h cycle per synodic month.
-        double hourOnDial = (solarNoonHour + fraction * 24.0) % 24.0;
+        // Moon falls behind the sun by one full 24 h revolution per synodic month.
+        // localHour anchors the moon in the same coordinate system as the sun icon.
+        double hourOnDial = (localHour + fraction * 24.0) % 24.0;
 
         return new MoonData(fraction, illuminated, hourOnDial);
     }
