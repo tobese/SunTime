@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "android: verify Baklava-M",
+      "type": "shell",
+      "command": "bash -lc 'OUT=\"$(adb devices -l)\"; echo \"$OUT\" | grep -Eq \"model:Baklava-M|(^|[[:space:]])${ANDROIemulator-5554O_SERIAL__}[[:space:]]+device([[:space:]]|$)\" || (echo \"Baklava-M not found. Connect/authorize device, or set ANDROID_SERIAL to your device ID from adb devices -l.\" && exit 1)'",
+      "problemMatcher": []
+    },
+    {
+      "label": "android: build Baklava-M",
+      "type": "shell",
+      "command": "dotnet build SunTime.csproj -f net10.0-android --no-restore -p:AndroidAdbTarget=Baklava-M -v:minimal",
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    }
+  ]
+}

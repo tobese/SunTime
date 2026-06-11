@@ -1,0 +1,288 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AABB00000000000000000019 /* SunTimeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0000000000000000000F /* SunTimeWatchApp.swift */; };
+		AABB0000000000000000001A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000010 /* ContentView.swift */; };
+		AABB0000000000000000001B /* SunDialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000011 /* SunDialView.swift */; };
+		AABB0000000000000000001C /* SolarCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000012 /* SolarCalculator.swift */; };
+		AABB0000000000000000001D /* MoonCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000013 /* MoonCalculator.swift */; };
+		AABB0000000000000000001E /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000014 /* LocationManager.swift */; };
+		AABB0000000000000000001F /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000015 /* Models.swift */; };
+		AABB00000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AABB00000000000000000017 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AABB0000000000000000000F /* SunTimeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunTimeWatchApp.swift; sourceTree = "<group>"; };
+		AABB00000000000000000010 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AABB00000000000000000011 /* SunDialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunDialView.swift; sourceTree = "<group>"; };
+		AABB00000000000000000012 /* SolarCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarCalculator.swift; sourceTree = "<group>"; };
+		AABB00000000000000000013 /* MoonCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonCalculator.swift; sourceTree = "<group>"; };
+		AABB00000000000000000014 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		AABB00000000000000000015 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		AABB00000000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AABB00000000000000000017 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AABB00000000000000000018 /* SunTimeWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SunTimeWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AABB0000000000000000000B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AABB0000000000000000000C /* SunTimeWatch */ = {
+			isa = PBXGroup;
+			children = (
+				AABB0000000000000000000E /* SunTimeWatch Watch App */,
+				AABB0000000000000000000D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AABB0000000000000000000D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AABB00000000000000000018 /* SunTimeWatch Watch App.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AABB0000000000000000000E /* SunTimeWatch Watch App */ = {
+			isa = PBXGroup;
+			children = (
+				AABB0000000000000000000F /* SunTimeWatchApp.swift */,
+				AABB00000000000000000010 /* ContentView.swift */,
+				AABB00000000000000000011 /* SunDialView.swift */,
+				AABB00000000000000000012 /* SolarCalculator.swift */,
+				AABB00000000000000000013 /* MoonCalculator.swift */,
+				AABB00000000000000000014 /* LocationManager.swift */,
+				AABB00000000000000000015 /* Models.swift */,
+				AABB00000000000000000017 /* Assets.xcassets */,
+				AABB00000000000000000016 /* Info.plist */,
+			);
+			path = "SunTimeWatch Watch App";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AABB00000000000000000002 /* SunTimeWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AABB00000000000000000004 /* Build configuration list for PBXNativeTarget "SunTimeWatch Watch App" */;
+			buildPhases = (
+				AABB00000000000000000009 /* Sources */,
+				AABB0000000000000000000A /* Resources */,
+				AABB0000000000000000000B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SunTimeWatch Watch App";
+			productName = "SunTimeWatch Watch App";
+			productReference = AABB00000000000000000018 /* SunTimeWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AABB00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AABB00000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AABB00000000000000000003 /* Build configuration list for PBXProject "SunTimeWatch" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AABB0000000000000000000C;
+			productRefGroup = AABB0000000000000000000D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AABB00000000000000000002 /* SunTimeWatch Watch App */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AABB0000000000000000000A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AABB00000000000000000020 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AABB00000000000000000009 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AABB00000000000000000019 /* SunTimeWatchApp.swift in Sources */,
+				AABB0000000000000000001A /* ContentView.swift in Sources */,
+				AABB0000000000000000001B /* SunDialView.swift in Sources */,
+				AABB0000000000000000001C /* SolarCalculator.swift in Sources */,
+				AABB0000000000000000001D /* MoonCalculator.swift in Sources */,
+				AABB0000000000000000001E /* LocationManager.swift in Sources */,
+				AABB0000000000000000001F /* Models.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AABB00000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AABB00000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				MTL_FAST_MATH = YES;
+				SDKROOT = watchos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		AABB00000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "SunTimeWatch Watch App/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.blackcatstudio.SunTimeWatch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		AABB00000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "SunTimeWatch Watch App/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.blackcatstudio.SunTimeWatch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AABB00000000000000000003 /* Build configuration list for PBXProject "SunTimeWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AABB00000000000000000005 /* Debug */,
+				AABB00000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AABB00000000000000000004 /* Build configuration list for PBXNativeTarget "SunTimeWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AABB00000000000000000007 /* Debug */,
+				AABB00000000000000000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AABB00000000000000000001 /* Project object */;
+}
